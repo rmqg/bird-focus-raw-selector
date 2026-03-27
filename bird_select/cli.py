@@ -8,181 +8,181 @@ from .pipeline import BirdFocusSelector, SelectorConfig, summarize_results
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Select RAW files that contain at least one bird in focus.",
+        description="筛选包含鸟且至少一只鸟清晰对焦的 RAW 文件。",
     )
     parser.add_argument(
         "--source",
         type=Path,
         default=Path(r"E:\100NZ7_2"),
-        help="Source directory that will be scanned recursively for supported RAW files.",
+        help="源目录：会递归扫描支持的 RAW 文件。",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
         default=None,
-        help="Output directory for matched RAW files. Defaults to <source>/selected_birds_in_focus.",
+        help="输出目录：保存命中的 RAW 文件。默认 <source>/selected_birds_in_focus。",
     )
     parser.add_argument(
         "--extensions",
         default=".nef,.nrw,.cr2,.cr3,.crw,.arw,.sr2,.srf",
-        help="Comma-separated RAW file extensions to scan recursively.",
+        help="递归扫描的 RAW 扩展名，逗号分隔。",
     )
     parser.add_argument(
         "--exclude-dir-prefixes",
         default="selected_birds_in_focus,raw",
-        help="Comma-separated directory-name prefixes to skip during recursive scan.",
+        help="递归扫描时跳过的目录名前缀，逗号分隔。",
     )
     parser.add_argument(
         "--model",
         default="yolov8s-seg.pt",
-        help="Pretrained bird detection model name or local path. Segmentation models are preferred for higher precision.",
+        help="预训练鸟类检测模型名称或本地路径，建议使用分割模型以提高精度。",
     )
     parser.add_argument(
         "--device",
         default="auto",
-        help="Inference device passed to Ultralytics, for example auto, cpu, or 0.",
+        help="推理设备（传给 Ultralytics），如 auto、cpu 或 0。",
     )
     parser.add_argument(
         "--cpu-workers",
         type=int,
         default=0,
-        help="CPU parallel worker count. 0 means auto (about half of logical CPU cores).",
+        help="CPU 并行 worker 数。0 表示自动（约为逻辑核心数的一半）。",
     )
     parser.add_argument(
         "--confidence-threshold",
         type=float,
         default=0.40,
-        help="Minimum bird detection confidence.",
+        help="鸟检测最小置信度阈值。",
     )
     parser.add_argument(
         "--iou-threshold",
         type=float,
         default=0.45,
-        help="NMS IoU threshold for the detector.",
+        help="检测器 NMS 的 IoU 阈值。",
     )
     parser.add_argument(
         "--max-infer-side",
         type=int,
         default=0,
-        help="Detector inference side length cap. 0 means use image max side directly.",
+        help="检测推理边长上限。0 表示直接使用图像最大边。",
     )
     parser.add_argument(
         "--analysis-max-side",
         type=int,
         default=0,
-        help="Resize decoded images to this max side before detection. 0 means no resize.",
+        help="检测前先缩放到此最大边长。0 表示不缩放。",
     )
     parser.add_argument(
         "--min-preview-side",
         type=int,
         default=1200,
-        help="If the embedded preview is smaller than this, fall back to half-size RAW decoding.",
+        help="若内嵌预览图小于该阈值，则回退到半尺寸 RAW 解码。",
     )
     parser.add_argument(
         "--allow-full-raw-fallback",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Allow fallback decoding strategy when preferred full RAW decode fails.",
+        help="当优先 RAW 解码失败时，允许回退到其他解码策略。",
     )
     parser.add_argument(
         "--prefer-full-raw",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Prefer full RAW decode before trying embedded preview.",
+        help="优先使用 full RAW 解码，再尝试内嵌预览图。",
     )
     parser.add_argument(
         "--full-raw-half-size",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Decode full RAW at half-size. Keep disabled to use full resolution.",
+        help="full RAW 是否半尺寸解码。关闭时使用原始分辨率。",
     )
     parser.add_argument(
         "--min-bird-area-ratio",
         type=float,
         default=0.0015,
-        help="Minimum bird bounding-box area divided by full image area.",
+        help="鸟框最小面积占比（bbox 面积 / 全图面积）。",
     )
     parser.add_argument(
         "--min-bird-side",
         type=int,
         default=70,
-        help="Minimum bird bounding-box width and height in analysis pixels.",
+        help="鸟框最小宽高（分析图像像素）。",
     )
     parser.add_argument(
         "--laplacian-threshold",
         type=float,
         default=1100.0,
-        help="Minimum Laplacian variance required inside the bird ROI.",
+        help="鸟 ROI 内 Laplacian 方差最小阈值。",
     )
     parser.add_argument(
         "--tenengrad-threshold",
         type=float,
         default=28.0,
-        help="Minimum Tenengrad score required inside the bird ROI.",
+        help="鸟 ROI 内 Tenengrad 分数最小阈值。",
     )
     parser.add_argument(
         "--tenengrad-p90-threshold",
         type=float,
         default=70.0,
-        help="Minimum 90th percentile Tenengrad score inside the focus region.",
+        help="聚焦区域 Tenengrad 90 分位数最小阈值。",
     )
     parser.add_argument(
         "--strong-edge-ratio-threshold",
         type=float,
         default=0.06,
-        help="Minimum ratio of strong gradients inside the focus region.",
+        help="聚焦区域强梯度像素占比最小阈值。",
     )
     parser.add_argument(
         "--center-crop-ratio",
         type=float,
         default=0.72,
-        help="Only the central portion of the bird ROI is used for sharpness evaluation.",
+        help="仅使用鸟 ROI 中央区域参与清晰度评估。",
     )
     parser.add_argument(
         "--min-focus-pixels",
         type=int,
         default=900,
-        help="Minimum number of pixels in the evaluated focus region.",
+        help="聚焦评估区域最小像素数。",
     )
     parser.add_argument(
         "--min-focus-pixel-ratio",
         type=float,
         default=0.10,
-        help="Minimum evaluated focus-region area divided by bird bounding-box area.",
+        help="聚焦评估区域最小面积占比（相对鸟框）。",
     )
     parser.add_argument(
         "--min-mask-fill-ratio",
         type=float,
         default=0.10,
-        help="When a segmentation mask exists, require at least this much of the bbox to be covered by the mask.",
+        help="存在分割掩码时，要求掩码覆盖鸟框的最小比例。",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print selected files but do not copy them.",
+        help="仅输出命中结果，不执行复制。",
     )
     parser.add_argument(
         "--log-format",
         choices=("csv", "jsonl"),
         default="csv",
-        help="Structured log format for all processed files.",
+        help="处理日志格式。",
     )
     parser.add_argument(
         "--log-path",
         type=Path,
         default=None,
-        help="Optional explicit log path. The parent directory will be created if needed.",
+        help="日志输出路径（可选）。如父目录不存在会自动创建。",
     )
     parser.add_argument(
         "--sample-limit",
         type=int,
         default=None,
-        help="Only process the first N RAW files after recursive discovery. Useful for threshold tuning.",
+        help="仅处理前 N 张 RAW（调参时使用）。",
     )
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="Overwrite files in the output directory if they already exist.",
+        help="输出目录中存在同名文件时允许覆盖。",
     )
     return parser
 
@@ -208,7 +208,7 @@ def main() -> int:
         if item.strip()
     )
     if not raw_extensions:
-        raise SystemExit("No valid extensions were provided.")
+        raise SystemExit("未提供有效的扩展名。")
 
     config = SelectorConfig(
         source_dir=source_dir,
@@ -248,14 +248,14 @@ def main() -> int:
     summary = summarize_results(results)
 
     print("")
-    print("Run summary")
-    print(f"  Processed: {summary['processed']}")
-    print(f"  Bird detected: {summary['bird_detected']}")
-    print(f"  Selected: {summary['selected']}")
-    print(f"  Copied: {summary['copied']}")
-    print(f"  Decode errors: {summary['decode_errors']}")
-    print(f"  Log: {log_path}")
+    print("运行摘要")
+    print(f"  处理总数: {summary['processed']}")
+    print(f"  检测到鸟: {summary['bird_detected']}")
+    print(f"  入选数量: {summary['selected']}")
+    print(f"  已复制数量: {summary['copied']}")
+    print(f"  解码错误: {summary['decode_errors']}")
+    print(f"  日志路径: {log_path}")
     if args.dry_run:
-        print("  Mode: dry-run (no files copied)")
+        print("  模式: 仅预览（不复制文件）")
 
     return 0

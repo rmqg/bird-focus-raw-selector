@@ -9,6 +9,8 @@ bird_focus_selection_*.jsonl
 build/
 dist/
 release/
+verify_1_0/
+.runtime_venv/
 *.spec
 *.log
 *.tmp

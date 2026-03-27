@@ -47,7 +47,12 @@ GPU 便携包（可选，CUDA 12.8）：
 powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu.ps1
 ```
 
-统一入口（默认源码 + CPU + GPU）：
+GPU 轻量联网包（推荐用于 GitHub Release）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu_online.ps1
+```
+
+统一入口（默认源码 + CPU + GPU 轻量联网）：
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1
 ```
@@ -65,21 +70,21 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check_release.ps1
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 `
   -Repo "<user>/<repo>" `
-  -Tag "v0.3.3" `
-  -Title "v0.3.3" `
-  -Notes "Bird Focus RAW Selector v0.3.3"
+  -Tag "v1.0.0" `
+  -Title "v1.0.0" `
+  -Notes "Bird Focus RAW Selector v1.0.0"
 ```
 
 脚本会上传：
 - 最新 `bird-select-source-*.zip`
 - 最新 `bird-select-portable-win64_cpu_*.zip`（如果没有 CPU 包，会回退匹配 `bird-select-portable-win64_*.zip`）
-- 若存在且未超过 2GB，额外上传最新 `bird-select-portable-win64_gpu-*.zip`
+- 若存在且未超过 2GB，额外上传最新 `bird-select-portable-win64_gpu-online_*.zip`（或其他 `gpu-*` 包）
 
 ## 7) 手动创建 Release（可选）
 
 ```powershell
-gh release create v0.3.3 --title "v0.3.3" --notes "Bird Focus RAW Selector v0.3.3"
-gh release upload v0.3.3 .\release\bird-select-source-*.zip
+gh release create v1.0.0 --title "v1.0.0" --notes "Bird Focus RAW Selector v1.0.0"
+gh release upload v1.0.0 .\release\bird-select-source-*.zip
 ```
 
 说明：

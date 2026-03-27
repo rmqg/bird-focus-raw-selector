@@ -5,6 +5,7 @@ import csv
 import json
 import os
 import shutil
+import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -194,7 +195,13 @@ class BirdFocusSelector:
 
     def _use_parallel_cpu(self) -> bool:
         device = str(self.resolved_device).strip().lower()
-        return device == "cpu" and self._resolved_cpu_workers() > 1
+        if device != "cpu":
+            return False
+        # PyInstaller frozen app on Windows is prone to process-pool instability.
+        # Prefer a stable single-process path for portable binaries.
+        if getattr(sys, "frozen", False):
+            return False
+        return self._resolved_cpu_workers() > 1
 
     def _resolved_cpu_workers(self) -> int:
         if self.config.cpu_workers > 0:
@@ -210,26 +217,37 @@ class BirdFocusSelector:
                 yield file_path, self.process_file(file_path)
             return
 
-        with ProcessPoolExecutor(
-            max_workers=workers,
-            initializer=_init_process_selector,
-            initargs=(self.config,),
-        ) as executor:
-            warmup_futures = [executor.submit(_worker_ready_signal) for _ in range(workers)]
-            warmup_bar = tqdm(total=workers, desc="Initializing workers", unit="worker", leave=False)
-            for future in as_completed(warmup_futures):
-                future.result()
-                warmup_bar.update(1)
-            warmup_bar.close()
+        completed_paths: set[Path] = set()
+        try:
+            with ProcessPoolExecutor(
+                max_workers=workers,
+                initializer=_init_process_selector,
+                initargs=(self.config,),
+            ) as executor:
+                warmup_futures = [executor.submit(_worker_ready_signal) for _ in range(workers)]
+                warmup_bar = tqdm(total=workers, desc="Initializing workers", unit="worker", leave=False)
+                for future in as_completed(warmup_futures):
+                    future.result()
+                    warmup_bar.update(1)
+                warmup_bar.close()
 
-            future_to_path = {
-                executor.submit(_process_file_in_worker, str(path)): path
-                for path in files
-            }
-            for future in as_completed(future_to_path):
-                file_path = future_to_path[future]
-                decision = future.result()
-                yield file_path, decision
+                future_to_path = {
+                    executor.submit(_process_file_in_worker, str(path)): path
+                    for path in files
+                }
+                for future in as_completed(future_to_path):
+                    file_path = future_to_path[future]
+                    decision = future.result()
+                    completed_paths.add(file_path)
+                    yield file_path, decision
+            return
+        except Exception as exc:
+            print(f"警告: CPU 并行处理失败，已自动回退单进程模式。原因: {exc}")
+
+        for file_path in files:
+            if file_path in completed_paths:
+                continue
+            yield file_path, self.process_file(file_path)
 
     def process_file(self, file_path: Path) -> FileDecision:
         threshold_used = (

@@ -1,6 +1,7 @@
 param(
     [switch]$BuildCpuPortable = $true,
-    [switch]$BuildGpuPortable = $true
+    [switch]$BuildGpuPortable = $false,
+    [switch]$BuildGpuOnlinePortable = $true
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,6 +14,11 @@ powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "package_source.p
 if ($BuildGpuPortable) {
     Write-Host "Generating GPU portable package..." -ForegroundColor Cyan
     powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "build_portable_gpu.ps1")
+}
+
+if ($BuildGpuOnlinePortable) {
+    Write-Host "Generating GPU online portable package..." -ForegroundColor Cyan
+    powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "build_portable_gpu_online.ps1")
 }
 
 if ($BuildCpuPortable) {

@@ -2,9 +2,7 @@
     [ValidateSet("dry-run", "copy")]
     [string]$Mode = "dry-run",
     [ValidateSet("fast", "quality")]
-    [string]$Preset = "fast",
-    [ValidateSet("gpu", "cpu")]
-    [string]$DevicePreset = "gpu"
+    [string]$Preset = "fast"
 )
 
 $ErrorActionPreference = "Stop"
@@ -68,11 +66,10 @@ if (-not [Environment]::Is64BitOperatingSystem) {
 }
 
 Write-Host ""
-Write-Host "鸟类清晰度筛选器（便携版）" -ForegroundColor Cyan
+Write-Host "鸟类清晰度筛选器（CPU 便携版）" -ForegroundColor Cyan
 $modeText = if ($Mode -eq "dry-run") { "仅预览（不复制）" } else { "正式复制" }
 $presetText = if ($Preset -eq "fast") { "快速" } else { "高质量" }
-$deviceText = if ($DevicePreset -eq "gpu") { "自动优先显卡" } else { "仅使用CPU" }
-Write-Host "运行模式: $modeText | 处理预设: $presetText | 设备策略: $deviceText"
+Write-Host "运行模式: $modeText | 处理预设: $presetText"
 Write-Host ""
 
 $source = Select-Folder -Title "请选择源文件夹（RAW 根目录）" -DefaultValue "E:\100NZ7_2"
@@ -96,7 +93,10 @@ $args = @(
     "--source", $source,
     "--exclude-dir-prefixes", "selected_birds_in_focus,raw",
     "--log-format", "csv",
-    "--log-path", $logPath
+    "--log-path", $logPath,
+    "--device", "cpu",
+    "--cpu-workers", "0",
+    "--model", $modelPath
 )
 
 if ($Mode -eq "dry-run") {
@@ -104,27 +104,6 @@ if ($Mode -eq "dry-run") {
 } else {
     $args += @("--output-dir", $outputDir)
 }
-
-if ($DevicePreset -eq "gpu") {
-    $gpuReady = $false
-    try {
-        $nvidia = Get-Command "nvidia-smi" -ErrorAction Stop
-        if ($nvidia) { $gpuReady = $true }
-    } catch {
-        $gpuReady = $false
-    }
-
-    if ($gpuReady) {
-        $args += @("--device", "0")
-    } else {
-        Write-Host "未检测到 NVIDIA 运行环境，自动回退到 CPU 模式。" -ForegroundColor Yellow
-        $args += @("--device", "cpu", "--cpu-workers", "0")
-    }
-} else {
-    $args += @("--device", "cpu", "--cpu-workers", "0")
-}
-
-$args += @("--model", $modelPath)
 
 if ($Preset -eq "fast") {
     $args += @(

@@ -16,4 +16,5 @@ Write-Host "Installing CPU dependencies..." -ForegroundColor Cyan
 Write-Host "Building CPU portable package..." -ForegroundColor Cyan
 powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "build_portable.ps1") `
     -PythonExe $cpuPython `
-    -PackageSuffix "cpu"
+    -PackageSuffix "cpu" `
+    -TemplateDir "packaging/portable_cpu"

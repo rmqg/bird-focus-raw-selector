@@ -18,6 +18,9 @@ pip install -r requirements-cpu.txt
 pip install -r requirements-gpu-cu128.txt
 ```
 
+如果你使用 `gpu-online` 轻量包：
+- 首次运行会自动执行以上安装步骤，请保持联网。
+
 ---
 
 ## 2) `No space left on device`

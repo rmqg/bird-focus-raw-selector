@@ -83,7 +83,10 @@ try {
     if (-not $portableZip) {
         throw "Portable package not found in release/. Run scripts\\build_portable_cpu.ps1 first."
     }
-    $gpuPortableZip = Get-LatestFile -Directory $releaseDir -Pattern "bird-select-portable-win64_gpu-*.zip"
+    $gpuPortableZip = Get-LatestFile -Directory $releaseDir -Pattern "bird-select-portable-win64_gpu-online_*.zip"
+    if (-not $gpuPortableZip) {
+        $gpuPortableZip = Get-LatestFile -Directory $releaseDir -Pattern "bird-select-portable-win64_gpu-*.zip"
+    }
 
     Ensure-AssetSize -Asset $sourceZip
     Ensure-AssetSize -Asset $portableZip

@@ -1,23 +1,21 @@
 Bird Focus Selector 便携包说明
 
-1) 解压整个压缩包到本地磁盘（不要在压缩包里直接双击运行）。
+这是完整便携包（内置可执行文件与模型）。
+
+使用步骤：
+1) 解压整个 zip 到本地磁盘（不要在压缩包内直接运行）。
 2) 建议先运行：
-   Run_DryRun_Fast_GPU.bat（无 NVIDIA 则用 CPU 版）
-3) 观察结果没问题后，再运行：
-   Run_Copy_Fast_GPU.bat 或 Run_Copy_Fast_CPU.bat
+   - Run_DryRun_Fast_GPU.bat（优先）
+   - 若 GPU 不可用，可改用 Run_DryRun_Fast_CPU.bat
+3) 检查结果后再运行正式复制：
+   - Run_Copy_Fast_GPU.bat
+   - 或 Run_Copy_Fast_CPU.bat
 
-文件说明：
-- Run_DryRun_Fast_GPU.bat: 预览，不复制（优先推荐）
-- Run_Copy_Fast_GPU.bat: 正式复制（优先推荐）
-- Run_DryRun_Fast_CPU.bat: 预览，不复制
-- Run_Copy_Fast_CPU.bat: 正式复制
-- run_selector.ps1: 启动器核心脚本
+运行时会提示你：
+- 选择源文件夹（RAW 根目录）
+- 选择输出文件夹（回车可用默认）
+- 设置日志路径（回车可自动生成）
 
-提示：
-- 首先输入源目录（你的 RAW 所在目录）
-- 然后输入输出目录（回车可用默认）
-- 最后输入日志路径（回车可自动生成）
-
-如果报错：
-- 右键 PowerShell 以管理员身份运行后再双击 bat
-- 查看同目录下 docs 或 README 的故障排查章节
+如果遇到问题：
+- 可先查看同目录 `docs` 下的排错文档；
+- 或改用 CPU 启动入口重试。

@@ -1,52 +1,49 @@
-# Bird Focus RAW Selector
+# 鸟类清晰对焦 RAW 初筛工具
 
-一个本地 Windows 工具，用于从 RAW 照片中筛选“有鸟且鸟主体清晰”的文件并复制到新目录。
+这是一个本地 Windows 工具，用来从大量 RAW 照片里自动初筛：
+- 图里有鸟；
+- 并且至少有一只鸟主体清晰；
+- 命中后把原始 RAW 复制到新目录（不改动原文件）。
 
-项目目标：
-- GitHub 可发布（源码仓库规范化）
-- 可直接发给不懂计算机的朋友使用（双击 bat 启动）
-- 尽量减少目标机器环境差异带来的问题
+## 适用格式
 
----
+- Nikon：`.nef`、`.nrw`
+- Canon：`.cr2`、`.cr3`、`.crw`
+- Sony：`.arw`、`.sr2`、`.srf`
 
-## 核心能力
+## 给普通用户（推荐）
 
-- 递归扫描 RAW 文件夹。
-- 默认跳过 `selected_birds_in_focus*` 与 `raw*` 子目录，避免把已筛结果或参考目录重复扫入。
-- 预训练模型检测鸟（不训练新模型）。
-- 在鸟 ROI 内评估清晰度（Laplacian + Tenengrad）。
-- 至少一只鸟清晰则入选。
-- 支持 dry-run。
-- 每个文件都输出结构化日志。
-- 复制阶段遇到同名文件会自动重命名（`__dup001`...），避免漏拷。
-- CPU 支持多进程并行（`--cpu-workers`，`0`=自动）。
+请直接在 GitHub 的 [Releases](https://github.com/rmqg/bird-focus-raw-selector/releases) 下载便携包：
 
-默认支持 RAW 扩展名：
-- Nikon: `.nef`, `.nrw`
-- Canon: `.cr2`, `.cr3`, `.crw`
-- Sony: `.arw`, `.sr2`, `.srf`
+- `bird-select-portable-win64_cpu_*.zip`
+  适合所有 Windows 机器，稳定、离线可用。
+- `bird-select-portable-win64_gpu-online_*.zip`
+  适合有 NVIDIA 显卡的机器，首次运行会联网安装依赖并下载模型。
 
----
+### 使用步骤
 
-## 仓库结构
+1. 下载 zip 后先完整解压，不要在压缩包内直接运行。
+2. 先双击 `Run_DryRun_Fast_*.bat`（只预览，不复制）。
+3. 确认结果后，再双击 `Run_Copy_Fast_*.bat`（正式复制）。
+4. 按提示依次选择：
+   - 源文件夹（RAW 根目录，例如 `E:\100NZ7_2`）
+   - 输出文件夹（可回车使用默认）
+   - 日志文件路径（可回车自动生成）
 
-```text
-bird_select/
-├─ bird_select/                     # 核心代码
-├─ docs/                            # 文档
-├─ packaging/portable/              # 便携包启动器模板
-├─ scripts/                         # 打包/检查脚本
-├─ pyproject.toml
-├─ requirements.txt
-├─ requirements-cpu.txt
-├─ requirements-gpu-cu128.txt
-├─ yolov8s-seg.pt
-└─ README.md
-```
+## 输出结果
 
----
+程序会为每一张 RAW 记录日志（CSV 或 JSONL），包含：
+- 文件路径
+- 是否检测到鸟
+- 检测置信度
+- 清晰度分数
+- 使用阈值
+- 最终决策
+- 失败原因（如有）
 
-## 开发者快速运行
+默认会自动跳过 `selected_birds_in_focus*` 和 `raw*` 子目录，避免重复扫描历史结果。
+
+## 给开发者（源码运行）
 
 ```powershell
 cd E:\bird_select
@@ -54,71 +51,27 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements-cpu.txt
-# If NVIDIA GPU is available, install GPU runtime deps as well:
-pip install -r requirements-gpu-cu128.txt
 python -m bird_select --help
 ```
 
----
-
-## 打包与交付
-
-### 1) 源码包（上传 GitHub 或发给开发者）
+示例（全量预览，不复制）：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package_source.ps1
+python -m bird_select `
+  --source E:\100NZ7_2 `
+  --dry-run `
+  --log-format csv `
+  --log-path E:\100NZ7_2\bird_focus_log.csv `
+  --device auto
 ```
 
-### 2) 便携包（小白可双击）
+## 项目文档
 
-GPU 版（优先推荐，CUDA 12.8 环境）：
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu.ps1
-```
-
-CPU 版（兼容兜底，跨机器更稳）：
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_cpu.ps1
-```
-
-统一入口（默认源码包 + CPU/GPU 便携包）：
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1
-```
-
-### 3) 发布前自检
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check_release.ps1
-```
-
-### 4) 发布到 GitHub Release
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 -Repo "<user>/<repo>"
-```
-
----
-
-## 便携包跨机器注意事项
-
-- 仅支持 Windows 10/11 64 位。
-- 建议先 dry-run 再 copy。
-- 启动器支持目录弹窗选择。
-- 默认优先走 GPU 方案；无 NVIDIA 或运行时不完整时回退 CPU。
-- 便携包内置模型文件，尽量避免首跑联网下载。
-
----
-
-## 文档索引
-
-- [小白使用说明](docs/FRIEND_QUICK_START_CN.md)
-- [参数手册](docs/PARAMETERS_REFERENCE_CN.md)
+- [普通用户快速上手](docs/FRIEND_QUICK_START_CN.md)
+- [参数说明](docs/PARAMETERS_REFERENCE_CN.md)
 - [故障排查](docs/TROUBLESHOOTING_CN.md)
 - [GitHub 发布流程](docs/GITHUB_RELEASE_GUIDE_CN.md)
 
----
-
-## License
+## 开源协议
 
 MIT

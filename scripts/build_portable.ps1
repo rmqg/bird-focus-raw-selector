@@ -1,7 +1,8 @@
 param(
     [string]$PythonExe = "",
     [switch]$SkipBuild = $false,
-    [string]$PackageSuffix = "default"
+    [string]$PackageSuffix = "default",
+    [string]$TemplateDir = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,7 +10,19 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $releaseDir = Join-Path $repoRoot "release"
 $distDir = Join-Path $repoRoot "dist\bird-select"
-$portableTemplateDir = Join-Path $repoRoot "packaging\portable"
+if ([string]::IsNullOrWhiteSpace($TemplateDir)) {
+    $portableTemplateDir = Join-Path $repoRoot "packaging\portable"
+} else {
+    if ([System.IO.Path]::IsPathRooted($TemplateDir)) {
+        $portableTemplateDir = $TemplateDir
+    } else {
+        $portableTemplateDir = Join-Path $repoRoot $TemplateDir
+    }
+}
+
+if (-not (Test-Path $portableTemplateDir)) {
+    throw "Template directory not found: $portableTemplateDir"
+}
 
 if ([string]::IsNullOrWhiteSpace($PythonExe)) {
     $PythonExe = Join-Path $repoRoot ".venv\Scripts\python.exe"
@@ -46,7 +59,6 @@ if (-not $SkipBuild) {
             "--hidden-import", "torchvision",
             "--hidden-import", "torchaudio",
             "--add-data", "yolov8s-seg.pt:.",
-            "--add-data", "README.md:.",
             "portable_entry.py"
         )
         & $PythonExe @buildArgs
@@ -78,9 +90,14 @@ Copy-Item -Path (Join-Path $portableTemplateDir "*") -Destination $portableDir -
 Copy-Item -Path (Join-Path $repoRoot "yolov8s-seg.pt") -Destination (Join-Path $portableDir "yolov8s-seg.pt") -Force
 
 $docsDir = Join-Path $portableDir "docs"
-New-Item -ItemType Directory -Path $docsDir -Force | Out-Null
-Copy-Item -Path (Join-Path $repoRoot "docs\FRIEND_QUICK_START_CN.md") -Destination $docsDir -Force
-Copy-Item -Path (Join-Path $repoRoot "docs\TROUBLESHOOTING_CN.md") -Destination $docsDir -Force
+$templateDocsDir = Join-Path $portableTemplateDir "docs"
+if (Test-Path $templateDocsDir) {
+    Copy-Item -Path $templateDocsDir -Destination $portableDir -Recurse -Force
+} else {
+    New-Item -ItemType Directory -Path $docsDir -Force | Out-Null
+    Copy-Item -Path (Join-Path $repoRoot "docs\FRIEND_QUICK_START_CN.md") -Destination $docsDir -Force
+    Copy-Item -Path (Join-Path $repoRoot "docs\TROUBLESHOOTING_CN.md") -Destination $docsDir -Force
+}
 
 Compress-Archive -Path (Join-Path $portableDir "*") -DestinationPath $zipPath -CompressionLevel Optimal
 Write-Host "Portable package created: $zipPath" -ForegroundColor Green
