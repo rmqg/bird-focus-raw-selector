@@ -2,9 +2,7 @@ param(
     [ValidateSet("dry-run", "copy")]
     [string]$Mode = "dry-run",
     [ValidateSet("fast", "quality")]
-    [string]$Preset = "fast",
-    [ValidateSet("gpu", "cpu")]
-    [string]$DevicePreset = "cpu"
+    [string]$Preset = "fast"
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,7 +67,7 @@ if (-not [Environment]::Is64BitOperatingSystem) {
 
 Write-Host ""
 Write-Host "Bird Focus Selector Portable Launcher" -ForegroundColor Cyan
-Write-Host "Mode: $Mode | Preset: $Preset | Device preset: $DevicePreset"
+Write-Host "Mode: $Mode | Preset: $Preset | Device: CPU"
 Write-Host ""
 
 $source = Select-Folder -Title "Select source folder (RAW root)" -DefaultValue "E:\100NZ7_2"
@@ -102,10 +100,7 @@ if ($Mode -eq "dry-run") {
     $args += @("--output-dir", $outputDir)
 }
 
-if ($DevicePreset -eq "gpu") {
-    Write-Host "GPU preset is currently mapped to CPU mode due high startup overhead." -ForegroundColor Yellow
-}
-$args += @("--device", "cpu", "--cpu-workers", "0")
+$args += @("--cpu-workers", "0")
 
 $args += @("--model", $modelPath)
 

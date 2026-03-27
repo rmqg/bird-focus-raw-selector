@@ -37,20 +37,14 @@ git push -u origin main
 powershell -ExecutionPolicy Bypass -File .\scripts\package_source.ps1
 ```
 
-GPU 便携包：
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu.ps1
-```
-
 CPU 便携包（跨机器更稳）：
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_cpu.ps1
 ```
 
-统一入口（默认源码 + CPU，GPU 按需开启）：
+统一入口（默认源码 + CPU）：
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1 -BuildGpuPortable
 ```
 
 ## 5) 发布前检查
@@ -66,9 +60,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check_release.ps1
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 `
   -Repo "<user>/<repo>" `
-  -Tag "v0.3.2" `
-  -Title "v0.3.2" `
-  -Notes "Bird Focus RAW Selector v0.3.2"
+  -Tag "v0.3.3" `
+  -Title "v0.3.3" `
+  -Notes "Bird Focus RAW Selector v0.3.3"
 ```
 
 脚本会上传：
@@ -78,8 +72,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 `
 ## 7) 手动创建 Release（可选）
 
 ```powershell
-gh release create v0.3.2 --title "v0.3.2" --notes "Bird Focus RAW Selector v0.3.2"
-gh release upload v0.3.2 .\release\bird-select-source-*.zip
+gh release create v0.3.3 --title "v0.3.3" --notes "Bird Focus RAW Selector v0.3.3"
+gh release upload v0.3.3 .\release\bird-select-source-*.zip
 ```
 
 说明：

@@ -8,8 +8,6 @@
 
 - `Run_DryRun_Fast_CPU.bat`：先预览结果，不复制。
 - `Run_Copy_Fast_CPU.bat`：正式复制。
-- `Run_DryRun_Fast_GPU.bat`：兼容保留入口，当前版本会回退为 CPU。
-- `Run_Copy_Fast_GPU.bat`：兼容保留入口，当前版本会回退为 CPU。
 
 启动器默认行为：
 - 递归扫描源目录。

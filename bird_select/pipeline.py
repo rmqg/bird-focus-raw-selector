@@ -25,7 +25,6 @@ class SelectorConfig:
     raw_extensions: tuple[str, ...]
     exclude_dir_prefixes: tuple[str, ...]
     model_name: str
-    device: str
     cpu_workers: int
     confidence_threshold: float
     iou_threshold: float
@@ -124,7 +123,6 @@ class BirdFocusSelector:
         )
         self.detector = BirdDetector(
             model_name=config.model_name,
-            device=config.device,
             confidence_threshold=config.confidence_threshold,
             iou_threshold=config.iou_threshold,
             max_infer_side=config.max_infer_side,
@@ -173,8 +171,7 @@ class BirdFocusSelector:
         return results, log_path
 
     def _use_parallel_cpu(self) -> bool:
-        device = str(self.config.device).strip().lower()
-        return device == "cpu" and self._resolved_cpu_workers() > 1
+        return self._resolved_cpu_workers() > 1
 
     def _resolved_cpu_workers(self) -> int:
         if self.config.cpu_workers > 0:

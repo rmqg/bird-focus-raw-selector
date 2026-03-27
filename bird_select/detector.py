@@ -20,13 +20,11 @@ class BirdDetector:
     def __init__(
         self,
         model_name: str = "yolov8s-seg.pt",
-        device: str = "cpu",
         confidence_threshold: float = 0.45,
         iou_threshold: float = 0.45,
         max_infer_side: int = 0,
     ) -> None:
         self.model = YOLO(model_name)
-        self.device = device
         self.confidence_threshold = confidence_threshold
         self.iou_threshold = iou_threshold
         self.max_infer_side = max_infer_side
@@ -95,7 +93,7 @@ class BirdDetector:
             try:
                 return self.model.predict(
                     source=image_rgb,
-                    device=self.device,
+                    device="cpu",
                     verbose=False,
                     conf=self.confidence_threshold,
                     iou=self.iou_threshold,
@@ -113,7 +111,7 @@ class BirdDetector:
             try:
                 return self.model.predict(
                     source=image_rgb,
-                    device=self.device,
+                    device="cpu",
                     verbose=False,
                     conf=self.confidence_threshold,
                     iou=self.iou_threshold,
@@ -125,7 +123,7 @@ class BirdDetector:
                 raise RuntimeError(f"detector_failed_after_fallback:{exc}") from exc
         return self.model.predict(
             source=image_rgb,
-            device=self.device,
+            device="cpu",
             verbose=False,
             conf=self.confidence_threshold,
             iou=self.iou_threshold,

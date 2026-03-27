@@ -9,8 +9,6 @@ Bird Focus Selector 便携包说明
 文件说明：
 - Run_DryRun_Fast_CPU.bat: 预览，不复制
 - Run_Copy_Fast_CPU.bat: 正式复制
-- Run_DryRun_Fast_GPU.bat: 兼容入口，当前版本会回退为 CPU
-- Run_Copy_Fast_GPU.bat: 兼容入口，当前版本会回退为 CPU
 - run_selector.ps1: 启动器核心脚本
 
 提示：

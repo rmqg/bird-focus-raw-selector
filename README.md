@@ -39,7 +39,6 @@ bird_select/
 ├─ pyproject.toml
 ├─ requirements.txt
 ├─ requirements-cpu.txt
-├─ requirements-gpu-cu128.txt
 ├─ yolov8s-seg.pt
 └─ README.md
 ```
@@ -53,7 +52,7 @@ cd E:\bird_select
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements-cpu.txt
 python -m bird_select --help
 ```
 
@@ -74,15 +73,9 @@ CPU 版（默认推荐，跨机器更稳）：
 powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_cpu.ps1
 ```
 
-GPU 版（可选，CUDA 12.8 环境）：
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu.ps1
-```
-
-统一入口（默认源码包 + CPU 便携包；需要时显式加 GPU）：
+统一入口（默认源码包 + CPU 便携包）：
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1 -BuildGpuPortable
 ```
 
 ### 3) 发布前自检
@@ -104,7 +97,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 -R
 - 仅支持 Windows 10/11 64 位。
 - 建议先 dry-run 再 copy。
 - 启动器支持目录弹窗选择。
-- 当前便携启动器默认走 CPU 多核；GPU 入口为了兼容保留，但会回退为 CPU。
+- 当前版本为 CPU-only 实现，默认走 CPU 多核。
 - 便携包内置模型文件，尽量避免首跑联网下载。
 
 ---
