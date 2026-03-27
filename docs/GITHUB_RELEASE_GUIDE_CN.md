@@ -42,7 +42,12 @@ CPU 便携包（跨机器更稳）：
 powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_cpu.ps1
 ```
 
-统一入口（默认源码 + CPU）：
+GPU 便携包（可选，CUDA 12.8）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu.ps1
+```
+
+统一入口（默认源码 + CPU + GPU）：
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1
 ```
@@ -68,6 +73,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 `
 脚本会上传：
 - 最新 `bird-select-source-*.zip`
 - 最新 `bird-select-portable-win64_cpu_*.zip`（如果没有 CPU 包，会回退匹配 `bird-select-portable-win64_*.zip`）
+- 若存在，额外上传最新 `bird-select-portable-win64_gpu-*.zip`
 
 ## 7) 手动创建 Release（可选）
 

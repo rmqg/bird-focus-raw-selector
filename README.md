@@ -39,6 +39,7 @@ bird_select/
 ├─ pyproject.toml
 ├─ requirements.txt
 ├─ requirements-cpu.txt
+├─ requirements-gpu-cu128.txt
 ├─ yolov8s-seg.pt
 └─ README.md
 ```
@@ -53,6 +54,8 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements-cpu.txt
+# If NVIDIA GPU is available, install GPU runtime deps as well:
+pip install -r requirements-gpu-cu128.txt
 python -m bird_select --help
 ```
 
@@ -68,12 +71,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package_source.ps1
 
 ### 2) 便携包（小白可双击）
 
-CPU 版（默认推荐，跨机器更稳）：
+GPU 版（优先推荐，CUDA 12.8 环境）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu.ps1
+```
+
+CPU 版（兼容兜底，跨机器更稳）：
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_cpu.ps1
 ```
 
-统一入口（默认源码包 + CPU 便携包）：
+统一入口（默认源码包 + CPU/GPU 便携包）：
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1
 ```
@@ -97,7 +105,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 -R
 - 仅支持 Windows 10/11 64 位。
 - 建议先 dry-run 再 copy。
 - 启动器支持目录弹窗选择。
-- 当前版本为 CPU-only 实现，默认走 CPU 多核。
+- 默认优先走 GPU 方案；无 NVIDIA 或运行时不完整时回退 CPU。
 - 便携包内置模型文件，尽量避免首跑联网下载。
 
 ---
@@ -113,4 +121,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 -R
 
 ## License
 
-Unlicense (Public Domain)
+MIT

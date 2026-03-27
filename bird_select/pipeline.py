@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import csv
 import json
 import os
@@ -25,6 +25,7 @@ class SelectorConfig:
     raw_extensions: tuple[str, ...]
     exclude_dir_prefixes: tuple[str, ...]
     model_name: str
+    device: str
     cpu_workers: int
     confidence_threshold: float
     iou_threshold: float
@@ -111,9 +112,16 @@ def _process_file_in_worker(file_path_str: str) -> FileDecision:
     return _PROCESS_SELECTOR.process_file(Path(file_path_str))
 
 
+def _worker_ready_signal() -> bool:
+    # Worker initializer already loads model/decoder. Returning from this task
+    # means one worker is ready to receive real file tasks.
+    return True
+
+
 class BirdFocusSelector:
     def __init__(self, config: SelectorConfig) -> None:
         self.config = config
+        self.resolved_device = self._resolve_device(config.device)
         self.decoder = RawDecoder(
             analysis_max_side=config.analysis_max_side,
             min_preview_side=config.min_preview_side,
@@ -123,6 +131,7 @@ class BirdFocusSelector:
         )
         self.detector = BirdDetector(
             model_name=config.model_name,
+            device=self.resolved_device,
             confidence_threshold=config.confidence_threshold,
             iou_threshold=config.iou_threshold,
             max_infer_side=config.max_infer_side,
@@ -137,6 +146,19 @@ class BirdFocusSelector:
             min_focus_pixel_ratio=config.min_focus_pixel_ratio,
             min_mask_fill_ratio=config.min_mask_fill_ratio,
         )
+
+    @staticmethod
+    def _resolve_device(raw_device: str) -> str:
+        device = str(raw_device).strip().lower()
+        if device != "auto":
+            return str(raw_device)
+
+        try:
+            import torch
+        except Exception:
+            return "cpu"
+
+        return "0" if torch.cuda.is_available() else "cpu"
 
     def run(self) -> tuple[list[FileDecision], Path]:
         files = list(self._iter_raw_files())
@@ -171,7 +193,8 @@ class BirdFocusSelector:
         return results, log_path
 
     def _use_parallel_cpu(self) -> bool:
-        return self._resolved_cpu_workers() > 1
+        device = str(self.resolved_device).strip().lower()
+        return device == "cpu" and self._resolved_cpu_workers() > 1
 
     def _resolved_cpu_workers(self) -> int:
         if self.config.cpu_workers > 0:
@@ -187,17 +210,25 @@ class BirdFocusSelector:
                 yield file_path, self.process_file(file_path)
             return
 
-        chunksize = max(1, len(files) // (workers * 8))
         with ProcessPoolExecutor(
             max_workers=workers,
             initializer=_init_process_selector,
             initargs=(self.config,),
         ) as executor:
-            for file_path, decision in zip(
-                files,
-                executor.map(_process_file_in_worker, (str(path) for path in files), chunksize=chunksize),
-                strict=False,
-            ):
+            warmup_futures = [executor.submit(_worker_ready_signal) for _ in range(workers)]
+            warmup_bar = tqdm(total=workers, desc="Initializing workers", unit="worker", leave=False)
+            for future in as_completed(warmup_futures):
+                future.result()
+                warmup_bar.update(1)
+            warmup_bar.close()
+
+            future_to_path = {
+                executor.submit(_process_file_in_worker, str(path)): path
+                for path in files
+            }
+            for future in as_completed(future_to_path):
+                file_path = future_to_path[future]
+                decision = future.result()
                 yield file_path, decision
 
     def process_file(self, file_path: Path) -> FileDecision:

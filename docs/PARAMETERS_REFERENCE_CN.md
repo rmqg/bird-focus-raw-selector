@@ -28,8 +28,11 @@
 
 - `--model`
   - 检测模型权重（默认 `yolov8s-seg.pt`）。
+- `--device`
+  - 设备参数，默认 `auto`（优先 GPU，不可用时回退 CPU）。
+  - 可手工指定 `cpu` 或 `0`（首块 GPU）。
 - `--cpu-workers`
-  - CPU 并行 worker 数。
+  - CPU 并行 worker 数（仅 CPU 模式生效）。
   - `0` 表示自动（约为逻辑核心数的一半，上限 8）。
 - `--confidence-threshold`
   - 鸟检测置信度阈值。

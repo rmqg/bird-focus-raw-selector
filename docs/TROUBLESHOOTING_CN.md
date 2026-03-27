@@ -13,6 +13,11 @@ pip install -r requirements.txt
 pip install -r requirements-cpu.txt
 ```
 
+如果你要启用 GPU：
+```powershell
+pip install -r requirements-gpu-cu128.txt
+```
+
 ---
 
 ## 2) `No space left on device`
@@ -75,7 +80,21 @@ $env:TMP='E:\pip_temp'
 
 ---
 
-## 7) decode error
+## 7) 想用 GPU 但实际跑在 CPU
+
+现象：
+- 日志里看到 `+cpu`
+- 或启动器提示回退到 CPU
+
+处理：
+- 确认 `nvidia-smi` 可用
+- 源码运行时显式传 `--device 0`
+- 便携包请使用 `Run_*_GPU.bat`
+- 若驱动/运行时不完整，启动器会自动降级到 CPU
+
+---
+
+## 8) decode error
 
 现象：
 - `failure_reason` 包含 `decode_error:*`
@@ -88,7 +107,7 @@ $env:TMP='E:\pip_temp'
 
 ---
 
-## 8) 为什么输出目录里出现 `__dup001` 这类文件名
+## 9) 为什么输出目录里出现 `__dup001` 这类文件名
 
 说明：
 - 源目录不同子文件夹可能有同名 RAW 文件。

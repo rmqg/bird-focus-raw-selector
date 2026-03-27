@@ -20,6 +20,7 @@ Write-Host "Smoke-checking portable executable..." -ForegroundColor Cyan
     --dry-run `
     --source $SampleSource `
     --sample-limit 1 `
+    --device cpu `
     --log-format csv `
     --log-path $logPath | Out-Null
 

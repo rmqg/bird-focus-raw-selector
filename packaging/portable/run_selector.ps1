@@ -2,7 +2,9 @@ param(
     [ValidateSet("dry-run", "copy")]
     [string]$Mode = "dry-run",
     [ValidateSet("fast", "quality")]
-    [string]$Preset = "fast"
+    [string]$Preset = "fast",
+    [ValidateSet("gpu", "cpu")]
+    [string]$DevicePreset = "gpu"
 )
 
 $ErrorActionPreference = "Stop"
@@ -67,7 +69,7 @@ if (-not [Environment]::Is64BitOperatingSystem) {
 
 Write-Host ""
 Write-Host "Bird Focus Selector Portable Launcher" -ForegroundColor Cyan
-Write-Host "Mode: $Mode | Preset: $Preset | Device: CPU"
+Write-Host "Mode: $Mode | Preset: $Preset | Device preset: $DevicePreset"
 Write-Host ""
 
 $source = Select-Folder -Title "Select source folder (RAW root)" -DefaultValue "E:\100NZ7_2"
@@ -100,7 +102,24 @@ if ($Mode -eq "dry-run") {
     $args += @("--output-dir", $outputDir)
 }
 
-$args += @("--cpu-workers", "0")
+if ($DevicePreset -eq "gpu") {
+    $gpuReady = $false
+    try {
+        $nvidia = Get-Command "nvidia-smi" -ErrorAction Stop
+        if ($nvidia) { $gpuReady = $true }
+    } catch {
+        $gpuReady = $false
+    }
+
+    if ($gpuReady) {
+        $args += @("--device", "0")
+    } else {
+        Write-Host "NVIDIA runtime not found. Fallback to CPU mode." -ForegroundColor Yellow
+        $args += @("--device", "cpu", "--cpu-workers", "0")
+    }
+} else {
+    $args += @("--device", "cpu", "--cpu-workers", "0")
+}
 
 $args += @("--model", $modelPath)
 

@@ -38,6 +38,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Pretrained bird detection model name or local path. Segmentation models are preferred for higher precision.",
     )
     parser.add_argument(
+        "--device",
+        default="auto",
+        help="Inference device passed to Ultralytics, for example auto, cpu, or 0.",
+    )
+    parser.add_argument(
         "--cpu-workers",
         type=int,
         default=0,
@@ -212,6 +217,7 @@ def main() -> int:
         raw_extensions=raw_extensions,
         exclude_dir_prefixes=exclude_dir_prefixes,
         model_name=model_name,
+        device=args.device,
         cpu_workers=args.cpu_workers,
         confidence_threshold=args.confidence_threshold,
         iou_threshold=args.iou_threshold,

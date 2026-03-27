@@ -2,11 +2,13 @@ Bird Focus Selector 便携包说明
 
 1) 解压整个压缩包到本地磁盘（不要在压缩包里直接双击运行）。
 2) 建议先运行：
-   Run_DryRun_Fast_CPU.bat
+   Run_DryRun_Fast_GPU.bat（无 NVIDIA 则用 CPU 版）
 3) 观察结果没问题后，再运行：
-   Run_Copy_Fast_CPU.bat
+   Run_Copy_Fast_GPU.bat 或 Run_Copy_Fast_CPU.bat
 
 文件说明：
+- Run_DryRun_Fast_GPU.bat: 预览，不复制（优先推荐）
+- Run_Copy_Fast_GPU.bat: 正式复制（优先推荐）
 - Run_DryRun_Fast_CPU.bat: 预览，不复制
 - Run_Copy_Fast_CPU.bat: 正式复制
 - run_selector.ps1: 启动器核心脚本

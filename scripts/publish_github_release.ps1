@@ -83,9 +83,13 @@ try {
     if (-not $portableZip) {
         throw "Portable package not found in release/. Run scripts\\build_portable_cpu.ps1 first."
     }
+    $gpuPortableZip = Get-LatestFile -Directory $releaseDir -Pattern "bird-select-portable-win64_gpu-*.zip"
 
     Ensure-AssetSize -Asset $sourceZip
     Ensure-AssetSize -Asset $portableZip
+    if ($gpuPortableZip) {
+        Ensure-AssetSize -Asset $gpuPortableZip
+    }
 
     git diff --quiet
     if ($LASTEXITCODE -ne 0) {
@@ -113,7 +117,11 @@ try {
     }
 
     if ($releaseExists) {
-        gh release upload $Tag $sourceZip.FullName $portableZip.FullName --repo $Repo --clobber
+        $uploadAssets = @($sourceZip.FullName, $portableZip.FullName)
+        if ($gpuPortableZip) {
+            $uploadAssets += $gpuPortableZip.FullName
+        }
+        gh release upload $Tag @uploadAssets --repo $Repo --clobber
     } else {
         $createArgs = @(
             "release", "create", $Tag,
@@ -123,6 +131,9 @@ try {
             "--title", $Title,
             "--notes", $Notes
         )
+        if ($gpuPortableZip) {
+            $createArgs += $gpuPortableZip.FullName
+        }
         if ($Draft) { $createArgs += "--draft" }
         if ($Prerelease) { $createArgs += "--prerelease" }
         gh @createArgs
