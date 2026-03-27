@@ -1,6 +1,7 @@
 param(
     [string]$PythonExe = "",
-    [switch]$SkipBuild = $false
+    [switch]$SkipBuild = $false,
+    [string]$PackageSuffix = "default"
 )
 
 $ErrorActionPreference = "Stop"
@@ -59,7 +60,8 @@ if (-not (Test-Path (Join-Path $distDir "bird-select.exe"))) {
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$portableDirName = "bird-select-portable-win64_$timestamp"
+$safeSuffix = if ([string]::IsNullOrWhiteSpace($PackageSuffix)) { "default" } else { $PackageSuffix }
+$portableDirName = "bird-select-portable-win64_$safeSuffix" + "_$timestamp"
 $portableDir = Join-Path $releaseDir $portableDirName
 $zipPath = "$portableDir.zip"
 
@@ -73,6 +75,7 @@ if (Test-Path $zipPath) {
 New-Item -ItemType Directory -Path $portableDir | Out-Null
 Copy-Item -Path (Join-Path $distDir "*") -Destination $portableDir -Recurse -Force
 Copy-Item -Path (Join-Path $portableTemplateDir "*") -Destination $portableDir -Recurse -Force
+Copy-Item -Path (Join-Path $repoRoot "yolov8s-seg.pt") -Destination (Join-Path $portableDir "yolov8s-seg.pt") -Force
 
 $docsDir = Join-Path $portableDir "docs"
 New-Item -ItemType Directory -Path $docsDir -Force | Out-Null

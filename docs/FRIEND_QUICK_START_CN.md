@@ -4,38 +4,45 @@
 
 ---
 
-## 1. 你会看到这些启动文件
+## 1. 启动文件说明
 
-- `Run_DryRun_Fast_GPU.bat`：先预览结果，不复制，速度快（有 NVIDIA 显卡推荐）。
-- `Run_Copy_Fast_GPU.bat`：正式复制，速度快（有 NVIDIA 显卡推荐）。
-- `Run_DryRun_Fast_CPU.bat`：先预览结果，不复制，兼容模式。
-- `Run_Copy_Fast_CPU.bat`：正式复制，兼容模式。
+- `Run_DryRun_Fast_CPU.bat`：先预览结果，不复制。
+- `Run_Copy_Fast_CPU.bat`：正式复制。
+- `Run_DryRun_Fast_GPU.bat`：兼容保留入口，当前版本会回退为 CPU。
+- `Run_Copy_Fast_GPU.bat`：兼容保留入口，当前版本会回退为 CPU。
+
+启动器默认行为：
+- 递归扫描源目录。
+- 自动跳过 `selected_birds_in_focus*` 和 `raw*` 子目录。
+- CPU 自动多核并行（`--cpu-workers 0`）。
+- 默认使用包内 `yolov8s-seg.pt`，不依赖在线下载。
 
 ---
 
 ## 2. 建议使用顺序
 
-1. 先双击 `Run_DryRun_Fast_GPU.bat`（没有 NVIDIA 显卡就用 CPU 版）。
+1. 先双击 `Run_DryRun_Fast_CPU.bat`。
 2. 看终端末尾统计和日志是否符合预期。
-3. 再双击 `Run_Copy_Fast_GPU.bat` 执行正式复制。
+3. 再双击 `Run_Copy_Fast_CPU.bat` 执行正式复制。
 
 ---
 
-## 3. 运行过程中需要输入什么
+## 3. 运行时需要输入什么
 
 启动后会让你输入：
 - 源目录（待筛选 RAW 的目录）
 - 输出目录（复制后的目标目录，回车可用默认）
 - 日志路径（回车可自动生成）
 
-不懂就直接回车用默认值。
+不懂就直接回车使用默认值。
+如果系统支持图形界面，会先弹出文件夹选择窗口，直接点选目录即可。
 
 ---
 
 ## 4. 常见问题
 
-- 双击闪退：用“以管理员身份运行”PowerShell 再启动 bat。
-- 速度慢：优先用 GPU 版 bat；或使用 Fast 预设。
+- 双击闪退：右键 PowerShell 以管理员身份运行后再执行 bat。
+- 速度慢：优先使用 CPU Fast 预设（默认 1600 分辨率分析）。
 - 没选到图：先看 dry-run 日志里的 `failure_reason` 字段。
 
 完整排错见：

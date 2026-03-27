@@ -14,31 +14,68 @@ function Read-WithDefault {
         [string]$Prompt,
         [string]$DefaultValue
     )
-    $raw = Read-Host "$Prompt (直接回车使用默认: $DefaultValue)"
+    $raw = Read-Host "$Prompt (press Enter to use default: $DefaultValue)"
     if ([string]::IsNullOrWhiteSpace($raw)) {
         return $DefaultValue
     }
     return $raw
 }
 
+function Select-Folder {
+    param(
+        [string]$Title,
+        [string]$DefaultValue
+    )
+
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop | Out-Null
+        $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+        $dialog.Description = $Title
+        if (-not [string]::IsNullOrWhiteSpace($DefaultValue) -and (Test-Path $DefaultValue)) {
+            $dialog.SelectedPath = $DefaultValue
+        }
+        $result = $dialog.ShowDialog()
+        if ($result -eq [System.Windows.Forms.DialogResult]::OK -and -not [string]::IsNullOrWhiteSpace($dialog.SelectedPath)) {
+            return $dialog.SelectedPath
+        }
+    } catch {
+        # GUI picker unavailable; fallback to typed input.
+    }
+
+    return Read-WithDefault -Prompt $Title -DefaultValue $DefaultValue
+}
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $exePath = Join-Path $scriptDir "bird-select.exe"
+$modelPath = Join-Path $scriptDir "yolov8s-seg.pt"
 
 if (-not (Test-Path $exePath)) {
-    Write-Host "未找到可执行文件: $exePath" -ForegroundColor Red
-    Read-Host "按回车退出"
+    Write-Host "Executable not found: $exePath" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+if (-not (Test-Path $modelPath)) {
+    Write-Host "Model file not found: $modelPath" -ForegroundColor Red
+    Write-Host "Please extract the full zip before running." -ForegroundColor Yellow
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+
+if (-not [Environment]::Is64BitOperatingSystem) {
+    Write-Host "This portable package requires 64-bit Windows." -ForegroundColor Red
+    Read-Host "Press Enter to exit"
     exit 1
 }
 
 Write-Host ""
-Write-Host "Bird Focus Selector 便携启动器" -ForegroundColor Cyan
-Write-Host "模式: $Mode | 预设: $Preset | 设备: $DevicePreset"
+Write-Host "Bird Focus Selector Portable Launcher" -ForegroundColor Cyan
+Write-Host "Mode: $Mode | Preset: $Preset | Device preset: $DevicePreset"
 Write-Host ""
 
-$source = Read-WithDefault -Prompt "请输入源目录" -DefaultValue "E:\100NZ7_2"
+$source = Select-Folder -Title "Select source folder (RAW root)" -DefaultValue "E:\100NZ7_2"
 if (-not (Test-Path $source)) {
-    Write-Host "源目录不存在: $source" -ForegroundColor Red
-    Read-Host "按回车退出"
+    Write-Host "Source folder does not exist: $source" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
     exit 1
 }
 
@@ -48,12 +85,13 @@ $defaultLog = Join-Path $source "bird_focus_selection_$($Mode.Replace('-', ''))_
 
 $outputDir = $null
 if ($Mode -eq "copy") {
-    $outputDir = Read-WithDefault -Prompt "请输入输出目录" -DefaultValue $defaultOutput
+    $outputDir = Select-Folder -Title "Select output folder for copied RAW files" -DefaultValue $defaultOutput
 }
-$logPath = Read-WithDefault -Prompt "请输入日志文件路径" -DefaultValue $defaultLog
+$logPath = Read-WithDefault -Prompt "Log file path" -DefaultValue $defaultLog
 
 $args = @(
     "--source", $source,
+    "--exclude-dir-prefixes", "selected_birds_in_focus,raw",
     "--log-format", "csv",
     "--log-path", $logPath
 )
@@ -65,10 +103,11 @@ if ($Mode -eq "dry-run") {
 }
 
 if ($DevicePreset -eq "gpu") {
-    $args += @("--device", "0")
-} else {
-    $args += @("--device", "cpu")
+    Write-Host "GPU preset is currently mapped to CPU mode due high startup overhead." -ForegroundColor Yellow
 }
+$args += @("--device", "cpu", "--cpu-workers", "0")
+
+$args += @("--model", $modelPath)
 
 if ($Preset -eq "fast") {
     $args += @(
@@ -105,19 +144,24 @@ if ($Preset -eq "fast") {
 }
 
 Write-Host ""
-Write-Host "开始执行..." -ForegroundColor Green
+Write-Host "Running..." -ForegroundColor Green
 Write-Host "$exePath $($args -join ' ')" -ForegroundColor DarkGray
 Write-Host ""
 
 try {
-    & $exePath @args
+    Push-Location $scriptDir
+    try {
+        & $exePath @args
+    } finally {
+        Pop-Location
+    }
 } catch {
     Write-Host ""
-    Write-Host "运行失败: $($_.Exception.Message)" -ForegroundColor Red
-    Read-Host "按回车退出"
+    Write-Host "Run failed: $($_.Exception.Message)" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
     exit 1
 }
 
 Write-Host ""
-Write-Host "执行完成。日志路径: $logPath" -ForegroundColor Green
-Read-Host "按回车退出"
+Write-Host "Done. Log file: $logPath" -ForegroundColor Green
+Read-Host "Press Enter to exit"

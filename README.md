@@ -1,40 +1,41 @@
 # Bird Focus RAW Selector
 
-本项目是一个本地 Windows CLI 工具，用于从 RAW 文件中自动筛出“有鸟且鸟主体清晰”的照片，并复制到输出目录。
+一个本地 Windows 工具，用于从 RAW 照片中筛选“有鸟且鸟主体清晰”的文件并复制到新目录。
 
-当前重点是实用可落地：
-- 支持 Nikon / Sony / Canon RAW。
-- 支持 dry-run（只看结果不复制）。
-- 每张文件都有结构化日志。
-- 默认支持“速度优先”和“质量优先”两类运行方式。
-- 可产出“小白可双击运行”的便携包（无需手动敲命令）。
+项目目标：
+- GitHub 可发布（源码仓库规范化）
+- 可直接发给不懂计算机的朋友使用（双击 bat 启动）
+- 尽量减少目标机器环境差异带来的问题
 
 ---
 
-## 1. 功能概览
+## 核心能力
 
-- 递归扫描源目录中的 RAW 文件。
-- 使用预训练检测模型判断是否有鸟。
-- 在鸟 ROI 内做清晰度评估（不是只看整张图）。
-- 至少一只鸟清晰则判定该 RAW 入选。
-- 只复制原始 RAW，不移动、不修改源文件。
-- 对每个文件输出日志字段：检测、清晰度、阈值、最终决策、失败原因等。
+- 递归扫描 RAW 文件夹。
+- 默认跳过 `selected_birds_in_focus*` 与 `raw*` 子目录，避免把已筛结果或参考目录重复扫入。
+- 预训练模型检测鸟（不训练新模型）。
+- 在鸟 ROI 内评估清晰度（Laplacian + Tenengrad）。
+- 至少一只鸟清晰则入选。
+- 支持 dry-run。
+- 每个文件都输出结构化日志。
+- 复制阶段遇到同名文件会自动重命名（`__dup001`...），避免漏拷。
+- CPU 支持多进程并行（`--cpu-workers`，`0`=自动）。
 
-默认支持扩展名：
+默认支持 RAW 扩展名：
 - Nikon: `.nef`, `.nrw`
 - Canon: `.cr2`, `.cr3`, `.crw`
 - Sony: `.arw`, `.sr2`, `.srf`
 
 ---
 
-## 2. 仓库结构
+## 仓库结构
 
 ```text
 bird_select/
 ├─ bird_select/                     # 核心代码
-├─ docs/                            # 完整文档
-├─ packaging/portable/              # 小白启动脚本模板
-├─ scripts/                         # 打包脚本
+├─ docs/                            # 文档
+├─ packaging/portable/              # 便携包启动器模板
+├─ scripts/                         # 打包/检查脚本
 ├─ pyproject.toml
 ├─ requirements.txt
 ├─ requirements-cpu.txt
@@ -45,7 +46,7 @@ bird_select/
 
 ---
 
-## 3. 开发者快速运行
+## 开发者快速运行
 
 ```powershell
 cd E:\bird_select
@@ -53,60 +54,62 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-```
-
-运行（默认源目录 `E:\100NZ7_2`）：
-```powershell
-python -m bird_select --dry-run
-```
-
-常用：
-```powershell
 python -m bird_select --help
 ```
 
 ---
 
-## 4. 两类推荐预设
+## 打包与交付
 
-### A) 速度优先（推荐先筛）
-- `--no-prefer-full-raw`
-- `--analysis-max-side 1600`
-- `--max-infer-side 1600`
-
-### B) 质量优先（更慢）
-- `--prefer-full-raw`
-- `--analysis-max-side 0`
-- `--max-infer-side 0`
-
-详细参数见：
-- [参数手册](docs/PARAMETERS_REFERENCE_CN.md)
-
----
-
-## 5. 打包与交付
-
-### 5.1 生成可上传 GitHub 的源码包
+### 1) 源码包（上传 GitHub 或发给开发者）
 
 ```powershell
-cd E:\bird_select
 powershell -ExecutionPolicy Bypass -File .\scripts\package_source.ps1
 ```
 
-输出在 `release/` 目录。
+### 2) 便携包（小白可双击）
 
-### 5.2 生成小白可用的 Windows 便携包
-
+CPU 版（默认推荐，跨机器更稳）：
 ```powershell
-cd E:\bird_select
-powershell -ExecutionPolicy Bypass -File .\scripts\build_portable.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_cpu.ps1
 ```
 
-输出 zip 在 `release/`，解压后直接双击 `.bat` 即可使用。
+GPU 版（可选，CUDA 12.8 环境）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu.ps1
+```
+
+统一入口（默认源码包 + CPU 便携包；需要时显式加 GPU）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1 -BuildGpuPortable
+```
+
+### 3) 发布前自检
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check_release.ps1
+```
+
+### 4) 发布到 GitHub Release
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 -Repo "<user>/<repo>"
+```
 
 ---
 
-## 6. 文档导航
+## 便携包跨机器注意事项
+
+- 仅支持 Windows 10/11 64 位。
+- 建议先 dry-run 再 copy。
+- 启动器支持目录弹窗选择。
+- 当前便携启动器默认走 CPU 多核；GPU 入口为了兼容保留，但会回退为 CPU。
+- 便携包内置模型文件，尽量避免首跑联网下载。
+
+---
+
+## 文档索引
 
 - [小白使用说明](docs/FRIEND_QUICK_START_CN.md)
 - [参数手册](docs/PARAMETERS_REFERENCE_CN.md)
@@ -115,6 +118,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_portable.ps1
 
 ---
 
-## 7. License
+## License
 
-默认建议 MIT（如需商业/闭源条款请自行替换）。
+Unlicense (Public Domain)

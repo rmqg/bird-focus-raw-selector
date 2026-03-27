@@ -1,11 +1,23 @@
+param(
+    [switch]$BuildCpuPortable = $true,
+    [switch]$BuildGpuPortable = $false
+)
+
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-Write-Host "1/2 Generating source package..." -ForegroundColor Cyan
+Write-Host "Generating source package..." -ForegroundColor Cyan
 powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "package_source.ps1")
 
-Write-Host "2/2 Generating portable package..." -ForegroundColor Cyan
-powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "build_portable.ps1")
+if ($BuildGpuPortable) {
+    Write-Host "Generating GPU portable package..." -ForegroundColor Cyan
+    powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "build_portable_gpu.ps1")
+}
 
-Write-Host "All packages built successfully." -ForegroundColor Green
+if ($BuildCpuPortable) {
+    Write-Host "Generating CPU portable package..." -ForegroundColor Cyan
+    powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "build_portable_cpu.ps1")
+}
+
+Write-Host "All requested packages built successfully." -ForegroundColor Green

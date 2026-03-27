@@ -1,70 +1,87 @@
 # GitHub 发布与交付指南
 
----
-
-## 1. 初始化（已建议）
-
-在项目根目录：
-```powershell
-git init -b main
-```
-
----
-
-## 2. 建议首提交流程
+## 1) 本地提交
 
 ```powershell
+cd E:\bird_select
 git add .
-git commit -m "feat: bird raw selector cli + packaging docs"
+git commit -m "chore: improve scan exclusion, packaging, and release workflow"
 ```
 
----
+## 2) 认证（不要在聊天里发 token）
 
-## 3. 连接 GitHub 远程
-
+优先网页授权：
 ```powershell
-git remote add origin <你的仓库地址>
-git push -u origin main
+gh auth login --hostname github.com --web --git-protocol https
+gh auth status
 ```
 
-如果 `gh auth login --web` 临时失败，可重试一次；或改用 token 登录（不要把 token 发给聊天）：
-
+如果网页授权失败，可用 token（本机执行）：
 ```powershell
-$env:GH_TOKEN = "<你的token>"
+$env:GH_TOKEN = "<your-token>"
 $env:GH_TOKEN | gh auth login --with-token
 gh auth status
 ```
 
----
+## 3) 连接远程并推送
 
-## 4. 生成源码 zip（可直接发人）
+```powershell
+git remote add origin https://github.com/<user>/<repo>.git
+git push -u origin main
+```
 
+## 4) 生成交付包
+
+源码包：
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\package_source.ps1
 ```
 
-输出在 `release/`。
-
----
-
-## 5. 生成便携包 zip（小白双击）
-
+GPU 便携包：
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_portable.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_gpu.ps1
 ```
 
-输出在 `release/`，含：
-- `bird-select.exe`
-- 双击 `.bat` 启动器
-- 朋友说明文档
+CPU 便携包（跨机器更稳）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_cpu.ps1
+```
 
----
+统一入口（默认源码 + CPU，GPU 按需开启）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\build_all_packages.ps1 -BuildGpuPortable
+```
 
-## 6. 推荐发版策略
+## 5) 发布前检查
 
-- `v0.x`：以实用迭代为主，允许参数变化。
-- 每次发版都附：
-  - `README`
-  - 参数说明
-  - 已知限制
-  - 典型结果统计
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check_release.ps1
+```
+
+## 6) 一键发布 GitHub Release（推荐）
+
+仓库已有脚本：`scripts/publish_github_release.ps1`
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 `
+  -Repo "<user>/<repo>" `
+  -Tag "v0.3.2" `
+  -Title "v0.3.2" `
+  -Notes "Bird Focus RAW Selector v0.3.2"
+```
+
+脚本会上传：
+- 最新 `bird-select-source-*.zip`
+- 最新 `bird-select-portable-win64_cpu_*.zip`（如果没有 CPU 包，会回退匹配 `bird-select-portable-win64_*.zip`）
+
+## 7) 手动创建 Release（可选）
+
+```powershell
+gh release create v0.3.2 --title "v0.3.2" --notes "Bird Focus RAW Selector v0.3.2"
+gh release upload v0.3.2 .\release\bird-select-source-*.zip
+```
+
+说明：
+- GitHub Release 单文件上限约 2GB；优先上传 CPU 便携包。
+- 若便携包超过 2GB，请改用更小配置重打包，或用网盘分享大文件。

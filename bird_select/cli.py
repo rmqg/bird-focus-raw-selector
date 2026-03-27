@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--exclude-dir-prefixes",
-        default="selected_birds_in_focus",
+        default="selected_birds_in_focus,raw",
         help="Comma-separated directory-name prefixes to skip during recursive scan.",
     )
     parser.add_argument(
@@ -41,6 +41,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--device",
         default="cpu",
         help="Inference device passed to Ultralytics, for example cpu or 0.",
+    )
+    parser.add_argument(
+        "--cpu-workers",
+        type=int,
+        default=0,
+        help="CPU parallel worker count. 0 means auto (about half of logical CPU cores).",
     )
     parser.add_argument(
         "--confidence-threshold",
@@ -187,6 +193,10 @@ def main() -> int:
 
     source_dir = args.source.resolve()
     output_dir = args.output_dir.resolve() if args.output_dir else source_dir / "selected_birds_in_focus"
+    model_name: str = args.model
+    model_path_candidate = Path(model_name)
+    if model_path_candidate.exists():
+        model_name = str(model_path_candidate.resolve())
     raw_extensions = tuple(
         item.strip().lower() if item.strip().startswith(".") else f".{item.strip().lower()}"
         for item in args.extensions.split(",")
@@ -206,8 +216,9 @@ def main() -> int:
         dry_run=args.dry_run,
         raw_extensions=raw_extensions,
         exclude_dir_prefixes=exclude_dir_prefixes,
-        model_name=args.model,
+        model_name=model_name,
         device=args.device,
+        cpu_workers=args.cpu_workers,
         confidence_threshold=args.confidence_threshold,
         iou_threshold=args.iou_threshold,
         max_infer_side=args.max_infer_side,

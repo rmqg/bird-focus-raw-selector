@@ -19,8 +19,8 @@
   - RAW 扩展名白名单。
   - 默认：`.nef,.nrw,.cr2,.cr3,.crw,.arw,.sr2,.srf`
 - `--exclude-dir-prefixes`
-  - 扫描时跳过目录名前缀，避免把历史输出目录再扫进去。
-  - 默认：`selected_birds_in_focus`
+  - 扫描时跳过目录名前缀，避免把历史输出目录或参考 `raw` 目录再扫进去。
+  - 默认：`selected_birds_in_focus,raw`
 
 ---
 
@@ -30,6 +30,10 @@
   - 检测模型权重（默认 `yolov8s-seg.pt`）。
 - `--device`
   - `cpu` 或 `0`（首块 GPU）。
+  - 当前便携启动器默认固定 CPU 多核；如需 GPU，请用 CLI 直接传 `--device 0`。
+- `--cpu-workers`
+  - 仅 `--device cpu` 时生效。
+  - `0` 表示自动（约为逻辑核心数的一半，上限 8）。
 - `--confidence-threshold`
   - 鸟检测置信度阈值。
 - `--iou-threshold`

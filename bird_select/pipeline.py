@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from concurrent.futures import ProcessPoolExecutor
 import csv
 import json
+import os
 import shutil
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -24,6 +26,7 @@ class SelectorConfig:
     exclude_dir_prefixes: tuple[str, ...]
     model_name: str
     device: str
+    cpu_workers: int
     confidence_threshold: float
     iou_threshold: float
     max_infer_side: int
@@ -95,6 +98,20 @@ class FileDecision:
     details_json: str
 
 
+_PROCESS_SELECTOR: BirdFocusSelector | None = None
+
+
+def _init_process_selector(config: SelectorConfig) -> None:
+    global _PROCESS_SELECTOR
+    _PROCESS_SELECTOR = BirdFocusSelector(config)
+
+
+def _process_file_in_worker(file_path_str: str) -> FileDecision:
+    if _PROCESS_SELECTOR is None:
+        raise RuntimeError("worker_selector_not_initialized")
+    return _PROCESS_SELECTOR.process_file(Path(file_path_str))
+
+
 class BirdFocusSelector:
     def __init__(self, config: SelectorConfig) -> None:
         self.config = config
@@ -132,21 +149,59 @@ class BirdFocusSelector:
             self.config.output_dir.mkdir(parents=True, exist_ok=True)
 
         results: list[FileDecision] = []
-        progress = tqdm(files, desc="Scanning RAW files", unit="file")
-        for file_path in progress:
-            decision = self.process_file(file_path)
+        progress = tqdm(total=len(files), desc="Scanning RAW files", unit="file")
+
+        if self._use_parallel_cpu():
+            decisions_iter = self._iter_decisions_parallel_cpu(files)
+        else:
+            decisions_iter = ((file_path, self.process_file(file_path)) for file_path in files)
+
+        for file_path, decision in decisions_iter:
             if decision.final_decision:
                 copy_status, copied_to = self._copy_if_needed(file_path)
                 decision.copy_status = copy_status
                 decision.copied_to = copied_to
             results.append(decision)
+            progress.update(1)
 
             if self.config.dry_run and decision.final_decision:
                 print(file_path)
+        progress.close()
 
         log_path = self._resolve_log_path()
         self._write_log(results, log_path)
         return results, log_path
+
+    def _use_parallel_cpu(self) -> bool:
+        device = str(self.config.device).strip().lower()
+        return device == "cpu" and self._resolved_cpu_workers() > 1
+
+    def _resolved_cpu_workers(self) -> int:
+        if self.config.cpu_workers > 0:
+            return self.config.cpu_workers
+        cpu_count = os.cpu_count() or 1
+        # Keep auto mode conservative to avoid excessive RAM usage.
+        return max(1, min(8, cpu_count // 2))
+
+    def _iter_decisions_parallel_cpu(self, files: list[Path]) -> Iterable[tuple[Path, FileDecision]]:
+        workers = self._resolved_cpu_workers()
+        if workers <= 1:
+            for file_path in files:
+                yield file_path, self.process_file(file_path)
+            return
+
+        chunksize = max(1, len(files) // (workers * 8))
+        with ProcessPoolExecutor(
+            max_workers=workers,
+            initializer=_init_process_selector,
+            initargs=(self.config,),
+        ) as executor:
+            for file_path, decision in zip(
+                files,
+                executor.map(_process_file_in_worker, (str(path) for path in files), chunksize=chunksize),
+                strict=False,
+            ):
+                yield file_path, decision
 
     def process_file(self, file_path: Path) -> FileDecision:
         threshold_used = (
@@ -441,38 +496,59 @@ class BirdFocusSelector:
             return "dry_run_selected", None
 
         destination = self.config.output_dir / file_path.name
+        copy_status = "copied"
         if destination.exists() and not self.config.overwrite:
-            return "already_exists", str(destination)
+            destination = self._next_available_destination(destination)
+            copy_status = "copied_renamed"
 
         try:
             shutil.copy2(file_path, destination)
-            return "copied", str(destination)
+            return copy_status, str(destination)
         except Exception as exc:
             return f"copy_error:{exc}", None
+
+    @staticmethod
+    def _next_available_destination(destination: Path) -> Path:
+        stem = destination.stem
+        suffix = destination.suffix
+        parent = destination.parent
+        index = 1
+        while True:
+            candidate = parent / f"{stem}__dup{index:03d}{suffix}"
+            if not candidate.exists():
+                return candidate
+            index += 1
 
     def _iter_raw_files(self) -> Iterable[Path]:
         source_dir = self.config.source_dir.resolve()
         output_dir = self.config.output_dir.resolve()
         exclude_prefixes = tuple(prefix.lower() for prefix in self.config.exclude_dir_prefixes if prefix.strip())
         count = 0
-        for path in source_dir.rglob("*"):
-            if not path.is_file():
-                continue
-            if path.suffix.lower() not in self.config.raw_extensions:
-                continue
-            relative_parts = path.relative_to(source_dir).parts[:-1]
-            if exclude_prefixes and any(
-                part.lower().startswith(prefix)
-                for part in relative_parts
-                for prefix in exclude_prefixes
-            ):
-                continue
-            if path.resolve().is_relative_to(output_dir):
-                continue
-            yield path
-            count += 1
-            if self.config.sample_limit is not None and count >= self.config.sample_limit:
-                return
+        for root, dirs, files in os.walk(source_dir, topdown=True):
+            root_path = Path(root).resolve()
+
+            # Prune folders early to avoid descending into output or excluded folders.
+            kept_dirs: list[str] = []
+            for dir_name in dirs:
+                dir_path = (root_path / dir_name).resolve()
+                dir_name_lower = dir_name.lower()
+                if dir_path.is_relative_to(output_dir):
+                    continue
+                if exclude_prefixes and any(dir_name_lower.startswith(prefix) for prefix in exclude_prefixes):
+                    continue
+                kept_dirs.append(dir_name)
+            dirs[:] = kept_dirs
+
+            for file_name in files:
+                path = root_path / file_name
+                if path.suffix.lower() not in self.config.raw_extensions:
+                    continue
+                if path.resolve().is_relative_to(output_dir):
+                    continue
+                yield path
+                count += 1
+                if self.config.sample_limit is not None and count >= self.config.sample_limit:
+                    return
 
     def _resolve_log_path(self) -> Path:
         extension = "csv" if self.config.log_format == "csv" else "jsonl"

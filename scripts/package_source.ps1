@@ -25,17 +25,17 @@ if (Test-Path $zipPath) {
     Remove-Item -Force $zipPath
 }
 
-$excludeTop = @(".venv", ".git", "build", "dist", "release")
+$excludeTop = @(".venv", ".venv_portable_cpu", ".git", "build", "dist", "release")
 $excludeFragment = @(
     "\__pycache__\",
     "\.pytest_cache\"
 )
 $excludeFilePattern = @(
     "*.pt",
-    "*.txt",
     "*.csv",
     "*.jsonl",
-    "*.log"
+    "*.log",
+    "*.spec"
 )
 
 $files = Get-ChildItem -Path $repoRoot -Recurse -File | Where-Object {
