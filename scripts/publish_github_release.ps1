@@ -88,7 +88,12 @@ try {
     Ensure-AssetSize -Asset $sourceZip
     Ensure-AssetSize -Asset $portableZip
     if ($gpuPortableZip) {
-        Ensure-AssetSize -Asset $gpuPortableZip
+        if ($gpuPortableZip.Length -ge $maxAssetBytes) {
+            Write-Host "GPU portable package exceeds GitHub 2GB asset limit and will be skipped: $($gpuPortableZip.FullName)" -ForegroundColor Yellow
+            $gpuPortableZip = $null
+        } else {
+            Ensure-AssetSize -Asset $gpuPortableZip
+        }
     }
 
     git diff --quiet

@@ -73,7 +73,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 `
 脚本会上传：
 - 最新 `bird-select-source-*.zip`
 - 最新 `bird-select-portable-win64_cpu_*.zip`（如果没有 CPU 包，会回退匹配 `bird-select-portable-win64_*.zip`）
-- 若存在，额外上传最新 `bird-select-portable-win64_gpu-*.zip`
+- 若存在且未超过 2GB，额外上传最新 `bird-select-portable-win64_gpu-*.zip`
 
 ## 7) 手动创建 Release（可选）
 
