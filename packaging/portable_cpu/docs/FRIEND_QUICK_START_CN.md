@@ -14,4 +14,5 @@
 ## 3. 说明
 
 - 本包仅使用 CPU。
+- 本包已内置 Python，无需额外安装 Python。
 - 会自动跳过 `selected_birds_in_focus*` 与 `raw*` 子目录。

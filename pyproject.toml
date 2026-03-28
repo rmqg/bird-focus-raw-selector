@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bird-select"
-version = "1.0.0"
+version = "1.1.0"
 description = "Local Windows CLI for selecting RAW photos with birds in focus."
 readme = "README.md"
 requires-python = ">=3.10"

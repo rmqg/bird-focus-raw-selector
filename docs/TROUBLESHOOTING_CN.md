@@ -1,117 +1,72 @@
 # 故障排查
 
----
+## 1) 双击后无法启动 / 一闪而过
 
-## 1) `ModuleNotFoundError` 或 `No module named ...`
+- 确认已经完整解压 zip，不要在压缩包内直接运行。
+- 确认系统为 64 位 Windows 10/11。
+- 右键 PowerShell 以管理员身份运行后再试一次。
+- 如果提示运行库缺失，安装或修复 Microsoft Visual C++ 2015-2022 Redistributable（x64）。
 
-现象：
-- 启动时提示缺少 `tqdm`、`torch`、`ultralytics` 等依赖。
+## 2) 找不到 Python 或缺少依赖
 
-处理：
+- CPU 便携包和 GPU 便携包都已内置 Python。
+- GPU 包首次运行会自动创建 `.runtime_venv` 并安装依赖，耗时较长是正常现象。
+- 源码模式才需要手动安装依赖：
+
 ```powershell
 pip install -r requirements.txt
 pip install -r requirements-cpu.txt
-```
-
-如果你要启用 GPU：
-```powershell
+# 如需 GPU
 pip install -r requirements-gpu-cu128.txt
 ```
 
-如果你使用 `gpu-online` 轻量包：
-- 首次运行会自动执行以上安装步骤，请保持联网。
+## 3) GPU 包提示未检测到 NVIDIA 环境
 
----
+- GPU 包是 GPU 专用，不包含 CPU 入口。
+- 先确认 `nvidia-smi` 在命令行可用。
+- 如果机器没有 NVIDIA 环境，请使用 CPU 便携包。
 
-## 2) `No space left on device`
+## 4) GPU 包模型下载失败
 
-现象：
-- pip 下载依赖时提示磁盘空间不足。
+- 先检查网络连接后重试（脚本会自动多次重试）。
+- 可以手动将 `yolov8s-seg.pt` 放到程序根目录，再重新运行。
+- 若网络受限，建议先在可联网环境完成首次运行，再拷贝整包到目标机器。
 
-处理：
-```powershell
-$env:TEMP='E:\pip_temp'
-$env:TMP='E:\pip_temp'
-```
+## 5) 安装依赖时提示空间不足
 
----
+- 把程序放到剩余空间更大的分区（如 `E:\` / `D:\`）。
+- GPU 包会把临时目录和 pip 缓存写到包目录下（`.tmp` / `.pip_cache`）。
 
-## 3) 结果明显过少/过多
+## 6) 结果明显过少或过多
 
-先看日志字段：
+优先查看日志字段：
 - `bird_detected`
-- `failure_reason`
+- `detection_confidence`
 - `laplacian_variance`
 - `tenengrad_score`
-- `tenengrad_p90`
+- `failure_reason`
 
-常见：
-- `bird_detected_but_below_sharpness_threshold` 多：清晰度阈值太严。
-- `bird_detected_but_boxes_too_small` 多：`min_bird_side` 或 `min_bird_area_ratio` 太高。
+常见原因：
+- `bird_detected_but_below_sharpness_threshold` 多：清晰度阈值偏严格。
+- `bird_detected_but_boxes_too_small` 多：`min_bird_side` 或 `min_bird_area_ratio` 偏大。
 
----
+## 7) 把历史输出目录也扫进去了
 
-## 4) 换台电脑后跑不起来
+确保包含参数：
 
-先检查：
-- 是否 64 位 Windows 10/11
-- 是否完整解压了整个 zip（不要在压缩包内直接运行）
-- 是否有读写权限（建议放在普通目录，如 `D:\tools\bird-select`）
-
-如果报 DLL 或运行库相关错误：
-- 安装/修复 Microsoft Visual C++ 2015-2022 Redistributable（x64）
-
----
-
-## 5) 把历史输出目录或 RAW 参考目录也扫进去了
-
-确保参数包含：
-- `--exclude-dir-prefixes selected_birds_in_focus,raw`
+```text
+--exclude-dir-prefixes selected_birds_in_focus,raw
+```
 
 这样会自动跳过 `selected_birds_in_focus*` 与 `raw*` 子目录。
 
----
+## 8) `decode_error:*` 解码错误
 
-## 6) CPU 并行后内存占用变高
+- 表示某些 RAW 文件无法被当前解码链路正常读取，可能是兼容性差异或文件损坏。
+- 程序会跳过失败文件并继续处理，不会中断全流程。
+- 请保留日志，后续可针对样本做兼容增强。
 
-说明：
-- CPU 并行会为多个进程各自加载模型与依赖，内存会明显上升。
+## 9) 输出目录出现 `__dup001` 这类重命名
 
-处理：
-- 降低并行度，例如：`--cpu-workers 2`
-- 或临时禁用并行：`--cpu-workers 1`
-
----
-
-## 7) 想用 GPU 但实际跑在 CPU
-
-现象：
-- 日志里看到 `+cpu`
-- 或启动器提示回退到 CPU
-
-处理：
-- 确认 `nvidia-smi` 可用
-- 源码运行时显式传 `--device 0`
-- 便携包请使用 `Run_*_GPU.bat`
-- 若驱动/运行时不完整，启动器会自动降级到 CPU
-
----
-
-## 8) decode error
-
-现象：
-- `failure_reason` 包含 `decode_error:*`
-
-说明：
-- 机型/压缩格式兼容差异，或 RAW 文件损坏。
-
-处理：
-- 保留日志并给出样例文件，后续可单独做解码兼容分支。
-
----
-
-## 9) 为什么输出目录里出现 `__dup001` 这类文件名
-
-说明：
-- 源目录不同子文件夹可能有同名 RAW 文件。
-- 为了不覆盖旧文件，复制阶段会自动重命名为 `原名__dup001.ext`、`__dup002.ext`。
+- 不同子目录里可能存在同名 RAW。
+- 为防止覆盖，复制时会自动改名为 `原名__dup001.ext`、`__dup002.ext`。

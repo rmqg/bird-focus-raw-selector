@@ -2,7 +2,8 @@ param(
     [string]$PythonExe = "",
     [switch]$SkipBuild = $false,
     [string]$PackageSuffix = "default",
-    [string]$TemplateDir = ""
+    [string]$TemplateDir = "",
+    [switch]$EmbedPython = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -88,6 +89,19 @@ New-Item -ItemType Directory -Path $portableDir | Out-Null
 Copy-Item -Path (Join-Path $distDir "*") -Destination $portableDir -Recurse -Force
 Copy-Item -Path (Join-Path $portableTemplateDir "*") -Destination $portableDir -Recurse -Force
 Copy-Item -Path (Join-Path $repoRoot "yolov8s-seg.pt") -Destination (Join-Path $portableDir "yolov8s-seg.pt") -Force
+
+if ($EmbedPython) {
+    Write-Host "Embedding Python runtime..." -ForegroundColor Cyan
+    $pythonBase = (& $PythonExe -c "import sys; print(sys.base_prefix)").Trim()
+    if (-not $pythonBase) {
+        throw "Cannot detect Python base prefix from: $PythonExe"
+    }
+    if (-not (Test-Path (Join-Path $pythonBase "python.exe"))) {
+        throw "Python base directory is invalid: $pythonBase"
+    }
+    $pythonRuntimeDir = Join-Path $portableDir "python_runtime"
+    Copy-Item -Path $pythonBase -Destination $pythonRuntimeDir -Recurse -Force
+}
 
 $docsDir = Join-Path $portableDir "docs"
 $templateDocsDir = Join-Path $portableTemplateDir "docs"

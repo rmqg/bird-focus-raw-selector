@@ -2,10 +2,21 @@
     [ValidateSet("dry-run", "copy")]
     [string]$Mode = "dry-run",
     [ValidateSet("fast", "quality")]
-    [string]$Preset = "fast"
+    [string]$Preset = "fast",
+    [string]$Source = "",
+    [string]$OutputDir = "",
+    [string]$LogPath = "",
+    [int]$SampleLimit = 0,
+    [switch]$NoPause = $false
 )
 
 $ErrorActionPreference = "Stop"
+
+function Wait-ForExit {
+    if (-not $NoPause) {
+        Read-Host "按回车退出" | Out-Null
+    }
+}
 
 function Read-WithDefault {
     param(
@@ -49,19 +60,19 @@ $modelPath = Join-Path $scriptDir "yolov8s-seg.pt"
 
 if (-not (Test-Path $exePath)) {
     Write-Host "未找到可执行文件: $exePath" -ForegroundColor Red
-    Read-Host "按回车退出"
+    Wait-ForExit
     exit 1
 }
 if (-not (Test-Path $modelPath)) {
     Write-Host "未找到模型文件: $modelPath" -ForegroundColor Red
     Write-Host "请先完整解压 zip 再运行。" -ForegroundColor Yellow
-    Read-Host "按回车退出"
+    Wait-ForExit
     exit 1
 }
 
 if (-not [Environment]::Is64BitOperatingSystem) {
     Write-Host "该便携包仅支持 64 位 Windows。" -ForegroundColor Red
-    Read-Host "按回车退出"
+    Wait-ForExit
     exit 1
 }
 
@@ -72,28 +83,31 @@ $presetText = if ($Preset -eq "fast") { "快速" } else { "高质量" }
 Write-Host "运行模式: $modeText | 处理预设: $presetText"
 Write-Host ""
 
-$source = Select-Folder -Title "请选择源文件夹（RAW 根目录）" -DefaultValue "E:\100NZ7_2"
-if (-not (Test-Path $source)) {
-    Write-Host "源文件夹不存在: $source" -ForegroundColor Red
-    Read-Host "按回车退出"
+if ([string]::IsNullOrWhiteSpace($Source)) {
+    $Source = Select-Folder -Title "请选择源文件夹（RAW 根目录）" -DefaultValue "E:\100NZ7_2"
+}
+if (-not (Test-Path $Source)) {
+    Write-Host "源文件夹不存在: $Source" -ForegroundColor Red
+    Wait-ForExit
     exit 1
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$defaultOutput = Join-Path $source "selected_birds_in_focus_$($Preset)_$timestamp"
-$defaultLog = Join-Path $source "bird_focus_selection_$($Mode.Replace('-', ''))_$($Preset)_$timestamp.csv"
+$defaultOutput = Join-Path $Source "selected_birds_in_focus_$($Preset)_$timestamp"
+$defaultLog = Join-Path $Source "bird_focus_selection_$($Mode.Replace('-', ''))_$($Preset)_$timestamp.csv"
 
-$outputDir = $null
-if ($Mode -eq "copy") {
-    $outputDir = Select-Folder -Title "请选择复制后的输出文件夹" -DefaultValue $defaultOutput
+if ($Mode -eq "copy" -and [string]::IsNullOrWhiteSpace($OutputDir)) {
+    $OutputDir = Select-Folder -Title "请选择复制后的输出文件夹" -DefaultValue $defaultOutput
 }
-$logPath = Read-WithDefault -Prompt "日志文件路径" -DefaultValue $defaultLog
+if ([string]::IsNullOrWhiteSpace($LogPath)) {
+    $LogPath = Read-WithDefault -Prompt "日志文件路径" -DefaultValue $defaultLog
+}
 
 $args = @(
-    "--source", $source,
+    "--source", $Source,
     "--exclude-dir-prefixes", "selected_birds_in_focus,raw",
     "--log-format", "csv",
-    "--log-path", $logPath,
+    "--log-path", $LogPath,
     "--device", "cpu",
     "--cpu-workers", "0",
     "--model", $modelPath
@@ -102,7 +116,10 @@ $args = @(
 if ($Mode -eq "dry-run") {
     $args += "--dry-run"
 } else {
-    $args += @("--output-dir", $outputDir)
+    $args += @("--output-dir", $OutputDir)
+}
+if ($SampleLimit -gt 0) {
+    $args += @("--sample-limit", "$SampleLimit")
 }
 
 if ($Preset -eq "fast") {
@@ -154,10 +171,10 @@ try {
 } catch {
     Write-Host ""
     Write-Host "运行失败: $($_.Exception.Message)" -ForegroundColor Red
-    Read-Host "按回车退出"
+    Wait-ForExit
     exit 1
 }
 
 Write-Host ""
-Write-Host "完成。日志文件: $logPath" -ForegroundColor Green
-Read-Host "按回车退出"
+Write-Host "完成。日志文件: $LogPath" -ForegroundColor Green
+Wait-ForExit

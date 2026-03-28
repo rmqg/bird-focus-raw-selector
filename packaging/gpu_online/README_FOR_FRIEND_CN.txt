@@ -1,14 +1,14 @@
-Bird Focus Selector GPU 轻量联网包说明
+鸟类 RAW 初筛工具（GPU 便携包）使用说明
 
-这个包为了减小体积，不内置 Python 依赖和模型权重。
-首次运行会自动联网安装依赖，并在缺少模型时自动下载 yolov8s-seg.pt。
+这是 GPU 专用便携包，已内置 Python 运行环境。
+本包不提供 CPU 启动入口。
 
 使用步骤：
 1) 解压整个 zip 到本地磁盘（不要在压缩包内直接运行）。
-2) 首次建议运行：Run_DryRun_Fast_GPU.bat（无 NVIDIA 可用 CPU 版）。
-3) 检查结果后运行：Run_Copy_Fast_GPU.bat 或 Run_Copy_Fast_CPU.bat。
+2) 先运行：Run_DryRun_Fast_GPU.bat（预览结果，不复制）。
+3) 结果确认后运行：Run_Copy_Fast_GPU.bat（正式复制）。
 
-注意事项：
-- 首次运行需要联网，耗时会比较长（会下载 PyTorch CUDA 包）。
-- 需要系统已安装 Python 3.10+（推荐 3.11）。
-- 后续再次运行会复用 `.runtime_venv`，速度会快很多。
+提示：
+- 首次运行会自动安装 GPU 依赖（会下载较大文件，耗时较长）。
+- 若包内缺少模型文件，会自动下载 yolov8s-seg.pt。
+- 需要本机有可用 NVIDIA GPU 环境（nvidia-smi 可用）。
