@@ -4,10 +4,10 @@
 
 使用步骤：
 1) 解压整个 zip 到本地磁盘（不要在压缩包内直接运行）。
-2) 建议先运行：
+2) 按需执行预览（不复制）：
    - Run_DryRun_Fast_GPU.bat（优先）
    - 若 GPU 不可用，可改用 Run_DryRun_Fast_CPU.bat
-3) 检查结果后再运行正式复制：
+3) 按需执行正式复制：
    - Run_Copy_Fast_GPU.bat
    - 或 Run_Copy_Fast_CPU.bat
 

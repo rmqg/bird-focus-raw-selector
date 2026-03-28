@@ -5,8 +5,8 @@
 
 使用步骤：
 1) 解压整个 zip 到本地磁盘（不要在压缩包内直接运行）。
-2) 先运行：Run_DryRun_Fast_CPU.bat（预览结果，不复制）。
-3) 结果确认后运行：Run_Copy_Fast_CPU.bat（正式复制）。
+2) 按需执行：Run_DryRun_Fast_CPU.bat（预览结果，不复制）。
+3) 按需执行：Run_Copy_Fast_CPU.bat（正式复制）。
 
 提示：
 - 启动后先选源文件夹（RAW 根目录）。

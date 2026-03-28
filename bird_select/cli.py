@@ -46,7 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--cpu-workers",
         type=int,
         default=0,
-        help="CPU 并行 worker 数。0 表示自动（约为逻辑核心数的一半）。",
+        help="CPU 并行 worker 数。0 表示自动（使用全部逻辑核心）。",
     )
     parser.add_argument(
         "--confidence-threshold",

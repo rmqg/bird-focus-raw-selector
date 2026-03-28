@@ -88,6 +88,7 @@ if (Test-Path $zipPath) {
 New-Item -ItemType Directory -Path $portableDir | Out-Null
 Copy-Item -Path (Join-Path $distDir "*") -Destination $portableDir -Recurse -Force
 Copy-Item -Path (Join-Path $portableTemplateDir "*") -Destination $portableDir -Recurse -Force
+Copy-Item -Path (Join-Path $repoRoot "LICENSE") -Destination (Join-Path $portableDir "LICENSE") -Force
 Copy-Item -Path (Join-Path $repoRoot "yolov8s-seg.pt") -Destination (Join-Path $portableDir "yolov8s-seg.pt") -Force
 
 if ($EmbedPython) {

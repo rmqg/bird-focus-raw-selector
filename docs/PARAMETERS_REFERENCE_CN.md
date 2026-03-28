@@ -33,7 +33,7 @@
   - 可手工指定 `cpu` 或 `0`（首块 GPU）。
 - `--cpu-workers`
   - CPU 并行 worker 数（仅 CPU 模式生效）。
-  - `0` 表示自动（约为逻辑核心数的一半，上限 8）。
+  - `0` 表示自动（使用全部逻辑核心）。
 - `--confidence-threshold`
   - 鸟检测置信度阈值。
 - `--iou-threshold`

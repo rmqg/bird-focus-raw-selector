@@ -5,7 +5,6 @@ import csv
 import json
 import os
 import shutil
-import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -197,18 +196,14 @@ class BirdFocusSelector:
         device = str(self.resolved_device).strip().lower()
         if device != "cpu":
             return False
-        # PyInstaller frozen app on Windows is prone to process-pool instability.
-        # Prefer a stable single-process path for portable binaries.
-        if getattr(sys, "frozen", False):
-            return False
         return self._resolved_cpu_workers() > 1
 
     def _resolved_cpu_workers(self) -> int:
         if self.config.cpu_workers > 0:
             return self.config.cpu_workers
-        cpu_count = os.cpu_count() or 1
-        # Keep auto mode conservative to avoid excessive RAM usage.
-        return max(1, min(8, cpu_count // 2))
+        # Auto mode uses all available logical cores by default.
+        # This aligns with CPU-first bulk screening workloads.
+        return max(1, os.cpu_count() or 1)
 
     def _iter_decisions_parallel_cpu(self, files: list[Path]) -> Iterable[tuple[Path, FileDecision]]:
         workers = self._resolved_cpu_workers()

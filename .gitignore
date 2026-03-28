@@ -1,4 +1,5 @@
 .venv/
+.venv*/
 .venv_portable_cpu/
 __pycache__/
 *.pyc

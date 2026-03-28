@@ -5,8 +5,8 @@
 
 使用步骤：
 1) 解压整个 zip 到本地磁盘（不要在压缩包内直接运行）。
-2) 先运行：Run_DryRun_Fast_GPU.bat（预览结果，不复制）。
-3) 结果确认后运行：Run_Copy_Fast_GPU.bat（正式复制）。
+2) 按需执行：Run_DryRun_Fast_GPU.bat（预览结果，不复制）。
+3) 按需执行：Run_Copy_Fast_GPU.bat（正式复制）。
 
 提示：
 - 首次运行会自动安装 GPU 依赖（会下载较大文件，耗时较长）。

@@ -1,11 +1,11 @@
-# GitHub 发布指南（v1.1 适用）
+# GitHub 发布指南（v1.2 适用）
 
 ## 1) 提交代码
 
 ```powershell
 cd E:\bird_select
 git add .
-git commit -m "release: prepare v1.1.0"
+git commit -m "release: prepare v1.2.0 / 发布: 准备 v1.2.0"
 ```
 
 ## 2) GitHub 认证
@@ -59,6 +59,7 @@ git status
 
 要求：
 - 工作区干净（没有未提交改动）。
+- `LICENSE` 为 GPLv3 正文，且 `README`/`pyproject.toml` 的许可证声明一致。
 - `release` 目录中存在最新 3 类文件：
 - `bird-select-source-*.zip`
 - `bird-select-portable-win64_cpu_*.zip`
@@ -69,9 +70,9 @@ git status
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 `
   -Repo "rmqg/bird-focus-raw-selector" `
-  -Tag "v1.1.0" `
-  -Title "v1.1.0" `
-  -Notes "Bird Focus RAW Selector v1.1.0"
+  -Tag "v1.2.0" `
+  -Title "v1.2.0" `
+  -Notes "Bird Focus RAW Selector v1.2.0"
 ```
 
 脚本会：
@@ -82,10 +83,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish_github_release.ps1 `
 ## 6) 手动发布（可选）
 
 ```powershell
-gh release create v1.1.0 --title "v1.1.0" --notes "Bird Focus RAW Selector v1.1.0"
-gh release upload v1.1.0 .\release\bird-select-source-*.zip --clobber
-gh release upload v1.1.0 .\release\bird-select-portable-win64_cpu_*.zip --clobber
-gh release upload v1.1.0 .\release\bird-select-portable-win64_gpu-online_*.zip --clobber
+gh release create v1.2.0 --title "v1.2.0" --notes "Bird Focus RAW Selector v1.2.0"
+gh release upload v1.2.0 .\release\bird-select-source-*.zip --clobber
+gh release upload v1.2.0 .\release\bird-select-portable-win64_cpu_*.zip --clobber
+gh release upload v1.2.0 .\release\bird-select-portable-win64_gpu-online_*.zip --clobber
 ```
 
 ## 7) 发布后自检

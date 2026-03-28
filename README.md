@@ -32,8 +32,8 @@
 ## 使用步骤
 
 1. 下载 zip 后先完整解压，不要在压缩包内直接运行。
-2. 先运行 `Run_DryRun_Fast_*.bat`（只预览，不复制）。
-3. 确认结果后运行 `Run_Copy_Fast_*.bat`（正式复制）。
+2. 按需执行 `Run_DryRun_Fast_*.bat`（只预览，不复制）。
+3. 按需执行 `Run_Copy_Fast_*.bat`（正式复制）。
 4. 按提示选择源目录、输出目录、日志路径。
 
 ## 输出日志
@@ -76,8 +76,9 @@ python -m bird_select `
 - [普通用户快速上手](docs/FRIEND_QUICK_START_CN.md)
 - [参数说明](docs/PARAMETERS_REFERENCE_CN.md)
 - [故障排查](docs/TROUBLESHOOTING_CN.md)
+- [v1.2 验证记录（200 张）](docs/VALIDATION_V1_2_CN.md)
 - [GitHub 发布流程](docs/GITHUB_RELEASE_GUIDE_CN.md)
 
 ## 开源协议
 
-MIT
+GNU GPL v3.0（GPL-3.0-or-later）

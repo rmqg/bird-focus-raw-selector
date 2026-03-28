@@ -12,8 +12,8 @@
 ## 2. 使用顺序
 
 1. 完整解压 zip（不要在压缩包里直接运行）。
-2. 先双击 `Run_DryRun_Fast_*.bat` 预览结果。
-3. 确认没问题后，双击 `Run_Copy_Fast_*.bat` 正式复制。
+2. 按需执行 `Run_DryRun_Fast_*.bat`（预览结果，不复制）。
+3. 按需执行 `Run_Copy_Fast_*.bat`（正式复制）。
 
 ## 3. 运行时输入
 
